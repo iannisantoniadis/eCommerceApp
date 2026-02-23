@@ -1,6 +1,6 @@
 # E-Commerce App
 
-Simple application pertaining the various requirements of an online commerce platform
+Simple application that meets the various requirements of an online commerce platform
 
 ## Getting Started
 
