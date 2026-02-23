@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/payments
+    username: ${PG_USER}
+    password: ${PG_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    template:
+      default-topic: payment-topic
+    producer:
+      bootstrap-servers: localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.type.mapping: paymentConfirmation:com.example.ecomerce.notification.PaymentNotificationRequest
+
+  # To know where to validate JWT
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Use the container name 'keycloak-ms' as defined in your docker-compose
+          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          # Jars might need this if they can't reach the issuer during startup
+          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+server:
+  port: 8060

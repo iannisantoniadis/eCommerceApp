@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/orders
+    username: ${PG_USER}
+    password: ${PG_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    template:
+      default-topic: order-topic
+    producer:
+      bootstrap-servers: ${KAFKA_SERVER:localhost:9092}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.type.mapping: orderConfirmation:com.example.ecomerce.kafka.OrderConfirmation
+
+  # To know where to validate JWT
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Use the container name 'keycloak-ms' as defined in your docker-compose
+          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          # Jars might need this if they can't reach the issuer during startup
+          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+
+server:
+  port: 8070
+
+application:
+  config:
+    customer-url: http://localhost:8090/api/v1/customers
+    product-url: http://localhost:8050/api/v1/products
+    payment-url: http://localhost:8060/api/v1/payments

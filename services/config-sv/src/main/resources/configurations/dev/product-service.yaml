@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/products
+    username: ${PG_USER}
+    password: ${PG_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    baseline-on-migrate: true
+    enabled: true
+    baseline-description: "init"
+    baseline-version: 0
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+
+  # To know where to validate JWT
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Use the container name 'keycloak-ms' as defined in your docker-compose
+          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          # Jars might need this if they can't reach the issuer during startup
+          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+
+server:
+  port: 8050

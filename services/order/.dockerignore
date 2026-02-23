@@ -1,0 +1,20 @@
+# Ignore the local build folder (we build inside Docker instead)
+target/
+
+# Ignore IDE specific files
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Ignore version control
+.git
+.gitignore
+
+# Ignore logs
+*.log
+
+# Ignore local OS junk
+.DS_Store
+Thumbs.db

@@ -1,0 +1,35 @@
+eureka:
+  instance:
+    hostname: discovery-service
+  client:
+#    register-with-eureka: false
+#    fetch-registry: false
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka/
+
+
+# To check whether the service is up by accessing the actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+spring:
+  cloud:
+    config:
+      override.system-properties: false
+
+app:
+  keycloak:
+    realm: micro-services-api
+
+## To know where to validate JWT
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          # Use the container name 'keycloak-ms' as defined in your docker-compose
+#          issuer-uri: http://keycloak-ms:8080/realms/${KEYCLOAK_REALM}
+#          # Jars might need this if they can't reach the issuer during startup
+#          jwk-set-uri: http://keycloak-ms:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs

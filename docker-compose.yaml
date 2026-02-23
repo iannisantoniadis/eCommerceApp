@@ -1,0 +1,174 @@
+include:
+  - docker-compose.infra.yml
+
+services:
+  # JAVA STUFF
+  config-sv:
+    build:
+      context: ./services/config-sv
+      dockerfile: Dockerfile
+    networks:
+      - microservices-net
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      depends_on:
+        postgres:
+          condition: service_healthy
+
+  discovery-service:
+    build:
+      context: ./services/discovery
+      dockerfile: Dockerfile
+    networks:
+      - microservices-net
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      depends_on:
+        postgres:
+          condition: service_healthy
+
+  customer-service:
+    build:
+      context: ./services/customer
+      dockerfile: Dockerfile
+    networks:
+      - microservices-net
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - config-sv
+      - discovery-service
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8090/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      depends_on:
+        config-sv:
+          condition: service_healthy
+
+  order-service:
+    build:
+      context: ./services/order
+      dockerfile: Dockerfile
+    networks:
+      - microservices-net
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - config-sv
+      - discovery-service
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8070/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      depends_on:
+        config-sv:
+          condition: service_healthy
+
+  payment-service:
+    build:
+      context: ./services/payment
+      dockerfile: Dockerfile
+    networks:
+      - microservices-net
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - config-sv
+      - discovery-service
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8060/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      depends_on:
+        config-sv:
+          condition: service_healthy
+
+  product-service:
+    build:
+      context: ./services/product
+      dockerfile: Dockerfile
+    networks:
+      - microservices-net
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - config-sv
+      - discovery-service
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8050/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      depends_on:
+        config-sv:
+          condition: service_healthy
+
+  notification-service:
+    build:
+      context: ./services/notification
+      dockerfile: Dockerfile
+    networks:
+      - microservices-net
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - config-sv
+      - discovery-service
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8040/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      depends_on:
+        config-sv:
+          condition: service_healthy
+
+  gateway-service:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    networks:
+      - microservices-net
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - 8222:8222
+    depends_on:
+      config-sv:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+
+
+
+networks:
+  microservices-net:
+    driver: bridge
+
+#volumes:
+#  postgres:
+#  pgadmin:
+#  mongo:
+#  kafka:

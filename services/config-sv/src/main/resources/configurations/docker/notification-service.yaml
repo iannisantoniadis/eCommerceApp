@@ -1,0 +1,63 @@
+spring:
+  mongodb:
+    username: ${MONGO_ROOT_USER}
+    password: ${MONGO_ROOT_PASSWORD}
+    host: mongodb
+    port: 27017
+    database: notifications
+    authentication-database: admin
+#    uri: mongodb://localhost:27017/notifications
+
+  kafka:
+    consumer:
+      group-id: paymentGroup, orderGroup
+      auto-offset-reset: earliest
+      bootstrap-servers: kafka:9092
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        #        Tells the consumer what kind of object it should expect, where the obj is coming from, what object to trust / consume
+        spring.json.type.mapping: orderConfirmation:com.example.ecomerce.kafka.order.OrderConfirmation,paymentConfirmation:com.example.ecomerce.kafka.payment.PaymentConfirmation
+        spring.json.trusted.packages: '*'
+
+  mail:
+    host: mail-dev
+    port: 1025
+    username: user
+    password: admin
+    properties:
+      mail:
+        smtp:
+          trust: "*"
+        auth: true
+        starttls:
+          enable: true
+        connectiontimeout: 5000
+        timeout: 3000
+        writetimeout: 5000
+
+  # To know where to validate JWT
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Use the container name 'keycloak-ms' as defined in your docker-compose
+          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          # Jars might need this if they can't reach the issuer during startup
+          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+
+server:
+  port: 8040
+
+logging:
+  level:
+    org.springframework.data.mongodb: DEBUG
+    org.springframework.beans: DEBUG
+
+
+
+app:
+  kafka:
+    topic:
+      payment-topic: payment-topic
+      order-topic: order-topic

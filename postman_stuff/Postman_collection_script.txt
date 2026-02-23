@@ -1,0 +1,26 @@
+const getTokenRequest = {
+  url: `${pm.environment.get("url")}/realms/${pm.environment.get("realm")}/protocol/openid-connect/token`,
+  method: 'POST',
+  header: 'Content-Type: application/x-www-form-urlencoded',
+  body: {
+    mode: 'urlencoded',
+    urlencoded: [
+        {key: 'grant_type', value: 'password'},
+        {key: 'client_id', value: pm.environment.get("client_id")},
+        {key: 'client_secret', value: pm.environment.get("client_secret")},
+        {key: 'username', value: pm.environment.get("username")},
+        {key: 'password', value: pm.environment.get("password")}
+    ]
+  }
+};
+
+pm.sendRequest(getTokenRequest, (err, response) => {
+    // In case of Keycloak complaint.
+    console.log("Keycloak Response Body:", response.text());
+    
+    if (response.code === 200) {
+        pm.collectionVariables.set("current_access_token", response.json().access_token);
+    } else {
+        console.error("Login Failed! Status:", response.code);
+    }
+});

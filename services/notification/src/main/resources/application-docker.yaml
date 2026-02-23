@@ -1,0 +1,2 @@
+spring:
+    import: optional:configserver:http://config-sv

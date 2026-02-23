@@ -1,0 +1,40 @@
+# --- System / OS ---
+.DS_Store
+Thumbs.db
+*.swp
+
+# --- IDEs / Editors ---
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+bin/
+
+# --- Spring Boot & Java (Build Artifacts) ---
+# This ignores 'target' or 'build' in every sub-service folder
+**/target/
+**/build/
+**/out/
+.mvn/
+.gradle/
+*.class
+*.jar
+*.war
+*.ear
+
+# --- Native Images (GraalVM / Spring Boot 4 AOT) ---
+# If you use Spring Boot's native image support
+**/target/native/
+**/build/native/
+*.exe
+*.dll
+*.so
+
+# --- Docker & Logs ---
+*.log
+
+
+# --- Environment Files ---
+# .env
