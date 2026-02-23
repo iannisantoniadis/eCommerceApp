@@ -5,8 +5,8 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class CustomerNotFoundException extends RuntimeException {
-    public CustomerNotFoundException(String message) {
+public class CustomerBusinessException extends RuntimeException {
+    public CustomerBusinessException(String message) {
         super(message); // This passes the string to RuntimeException
     }
 }

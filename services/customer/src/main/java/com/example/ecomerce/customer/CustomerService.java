@@ -1,6 +1,6 @@
 package com.example.ecomerce.customer;
 
-import com.example.ecomerce.exception.CustomerNotFoundException;
+import com.example.ecomerce.exception.CustomerBusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -16,15 +16,16 @@ public class CustomerService {
 
     private final CustomerMapper mapper;
     public String createCustomer(CustomerRequest request) {
+        if (repository.findByEmail(request.email()).isPresent()){
+            throw new CustomerBusinessException("This email is already in use: " + request.email());
+        }
         Customer customer = repository.save(mapper.toCustomer(request));
         return customer.getId();
     }
 
     public void updateCustomer(CustomerRequest request) {
-
         var customer = repository.findById(request.id()).orElseThrow(() ->
-                new CustomerNotFoundException(String.format("No customer found for the provided id: %s", request.id())));
-
+                new CustomerBusinessException(String.format("No customer found for the provided id: %s", request.id())));
         mergerCustomer(customer, request);
         repository.save(customer);
 
@@ -51,7 +52,7 @@ public class CustomerService {
 
     public CustomerResponse findByIdResponse(String customerId){
         return mapper.toCustomerResponse(findById(customerId).orElseThrow(() ->
-                new CustomerNotFoundException(String.format("No customer found for the provided id: %s", customerId))));
+                new CustomerBusinessException(String.format("No customer found for the provided id: %s", customerId))));
     }
 
     public void deleteById(String customerId) {

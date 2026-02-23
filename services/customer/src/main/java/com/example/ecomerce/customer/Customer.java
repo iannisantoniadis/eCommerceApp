@@ -2,6 +2,7 @@ package com.example.ecomerce.customer;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @AllArgsConstructor
@@ -19,6 +20,7 @@ public class Customer {
 
     private String lastname;
 
+    @Indexed(unique = true)
     private String email;
 
     private Address address;
