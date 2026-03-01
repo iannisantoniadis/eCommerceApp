@@ -1,5 +1,8 @@
 package com.example.ecomerce.customer;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,12 +14,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/customers")
 @RequiredArgsConstructor
+@Tag(name = "Customers")
 public class CustomerController {
 
     private final CustomerService service;
 
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
+    @Operation(description = "Endpoint to create a new customer, usable by CUSTOMER")
+    @SecurityRequirement(name = "Keycloak-JWT")
     public ResponseEntity<String> createCustomer(
             @RequestBody @Valid CustomerRequest request
     ) {
@@ -25,6 +31,8 @@ public class CustomerController {
 
     @PutMapping
     @PreAuthorize("hasRole('CUSTOMER')")
+    @Operation(description = "Endpoint to update an existing customer's data, usable by CUSTOMER")
+    @SecurityRequirement(name = "Keycloak-JWT")
     public ResponseEntity<Void> updateCustomer(
             @RequestBody CustomerRequest request
     ) {
@@ -34,12 +42,16 @@ public class CustomerController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('CUSTOMER', 'VISITOR')")
+    @Operation(description = "Endpoint to find all customers, usable by VISITOR")
+    @SecurityRequirement(name = "Keycloak-JWT")
     public ResponseEntity<List<CustomerResponse>> findAllCustomers(){
         return ResponseEntity.ok(service.findAllCustomers());
     }
 
     @GetMapping("/exists/{customer-id}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'VISITOR')")
+    @Operation(description = "Endpoint to check the existence of a particular customer (for the orchestrator), usable by VISITOR")
+    @SecurityRequirement(name = "Keycloak-JWT")
     public ResponseEntity<Boolean> existsById(
             @PathVariable("customer-id") String customerId
     ) {
@@ -49,6 +61,8 @@ public class CustomerController {
 
     @GetMapping("/{customer-id}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'VISITOR')")
+    @Operation(description = "Endpoint to find a particular visitor by id, usable by VISITOR")
+    @SecurityRequirement(name = "Keycloak-JWT")
     public ResponseEntity<CustomerResponse> findById(
             @PathVariable("customer-id") String customerId
     ) {
@@ -58,6 +72,8 @@ public class CustomerController {
 
     @DeleteMapping("/{customer-id}")
     @PreAuthorize("hasRole('CUSTOMER')")
+    @Operation(description = "Endpoint to delete an existing customer, usable by CUSTOMER")
+    @SecurityRequirement(name = "Keycloak-JWT")
     public ResponseEntity<Void> deleteById(
             @PathVariable("customer-id") String customerId
     ) {

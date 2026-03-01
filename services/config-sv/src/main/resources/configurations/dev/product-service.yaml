@@ -27,5 +27,9 @@ spring:
           # Jars might need this if they can't reach the issuer during startup
           jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
 
+#springdoc:
+#  swagger-ui:
+#    oauth2-redirect-url: http://localhost:${server.port}/swagger-ui/oauth2-redirect.html
+
 server:
   port: 8050

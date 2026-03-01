@@ -8,22 +8,23 @@ spring:
       server:
         webflux:
           discovery:
-            locator:
-              enabled: true
               lower-case-service-id: true
           routes:
             - id: customer-service
               uri: lb://CUSTOMER-SERVICE
               predicates:
-                - Path=/api/v1/customers/**
+                - Path=/api/v1/customers/**, /customer-service/**
               filters:
                 - TokenRelay=
+                #Se scoate prima bucata din url - /customer-service si se trimite doar /api/v3/api-docs mai departe catre service
+                - RewritePath=/customer-service/(?<segment>.*), /$\{segment}
             - id: order-service
               uri: lb://ORDER-SERVICE
               predicates:
-                - Path=/api/v1/orders/**
+                - Path=/api/v1/orders/**, /order-service/**
               filters:
                 - TokenRelay=
+                - RewritePath=/order-service/(?<segment>.*), /$\{segment}
             - id: order-lines-service
               uri: lb://ORDER-SERVICE
               predicates:
@@ -33,15 +34,17 @@ spring:
             - id: products-service
               uri: lb://PRODUCT-SERVICE
               predicates:
-                - Path=/api/v1/products/**
+                - Path=/api/v1/products/**, /product-service/**
               filters:
                 - TokenRelay=
+                - RewritePath=/product-service/(?<segment>.*), /$\{segment}
             - id: payment-service
               uri: lb://PAYMENT-SERVICE
               predicates:
-                - Path=/api/v1/payments/**
+                - Path=/api/v1/payments/**, /payment-service/**
               filters:
                 - TokenRelay=
+                - RewritePath=/payment-service/(?<segment>.*), /$\{segment}
 
   # To know where to validate JWT
   security:
@@ -52,12 +55,6 @@ spring:
           issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
           # Jars might need this if they can't reach the issuer during startup
           jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
-
-
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:8761/eureka/
 
 management:
   tracing:
@@ -73,3 +70,29 @@ management:
   endpoint:
     gateway:
       access: read_only
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: TRACE
+
+springdoc:
+  enable-native-support: true
+  show-common-extensions: true
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    disable-swagger-default-url: true
+    path: /swagger-ui.html
+    enabled: true
+    config-url: /v3/api-docs/swagger-config
+    urls-primary-name: E-Commerce App
+    urls:
+      - name: Order Service
+        url: /order-service/v3/api-docs
+      - name: Product Service
+        url: /product-service/v3/api-docs
+      - name: Customer Service
+        url: /customer-service/v3/api-docs
+      - name: Payment Service
+        url: /payment-service/v3/api-docs

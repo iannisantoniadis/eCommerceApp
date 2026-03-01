@@ -71,3 +71,34 @@ management:
   endpoint:
     gateway:
       access: read_only
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: TRACE
+
+springdoc:
+#  enable-native-support: true
+#  swagger-ui:
+#    path: /swagger-ui.html
+#    enabled: true
+#    config-url: /v3/api-docs/swagger-config
+#    urls-primary-name: E-Commerce App
+  enable-native-support: true
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    config-url: /v3/api-docs/swagger-config
+    urls-primary-name: E-Commerce App
+
+    urls:
+      - name: Order Service
+        url: order-service:8070/v3/api-docs
+      - name: Product Service
+        url: product-service:8050/v3/api-docs
+      - name: Customer Service
+        url: customer-service:8090/v3/api-docs
+      - name: Payment Service
+        url: payment-service:8060/v3/api-docs

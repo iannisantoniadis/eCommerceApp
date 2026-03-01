@@ -67,6 +67,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
 		</dependency>
+		<!-- Source: https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webflux-ui -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+			<version>3.0.1</version>
+<!--			<scope>compile</scope>-->
+		</dependency>
 <!--		In order to send the token further-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

@@ -23,6 +23,14 @@ spring:
 app:
   keycloak:
     realm: micro-services-api
+    authorization_url: keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth
+    token_url: keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
+
+springdoc:
+  swagger-ui:
+    servers:
+      - url: http://gateway-service:8222
+        description: API Gateway
 
 ## To know where to validate JWT
 #  security:
