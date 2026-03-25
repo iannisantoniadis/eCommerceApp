@@ -62,6 +62,6 @@ Simple application that meets the various requirements of an online commerce pla
 ## TBA
 
 * Make security filter chains extract client roles instead of realm roles
-* Add Swagger
+* ~~Add Swagger~~
 * Fully Dockerize the app
 * Code cleanup
