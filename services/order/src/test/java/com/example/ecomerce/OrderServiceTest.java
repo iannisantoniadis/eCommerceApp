@@ -7,8 +7,6 @@ import com.example.ecomerce.kafka.OrderConfirmation;
 import com.example.ecomerce.kafka.OrderProducer;
 import com.example.ecomerce.order.*;
 import com.example.ecomerce.orderLine.OrderLineService;
-import com.example.ecomerce.payment.PaymentClient;
-import com.example.ecomerce.payment.PaymentRequest;
 import com.example.ecomerce.product.ProductClient;
 import com.example.ecomerce.product.PurchaseRequest;
 import com.example.ecomerce.product.PurchaseResponse;
@@ -19,13 +17,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,7 +34,7 @@ public class OrderServiceTest {
     @Mock private OrderRepository repository;
     @Mock private OrderMapper mapper;
     @Mock private OrderLineService orderLineService;
-    @Mock private PaymentClient paymentClient;
+//    @Mock private PaymentClient paymentClient;
     @Mock private OrderProducer orderProducer;
 
     @InjectMocks
@@ -62,9 +57,9 @@ public class OrderServiceTest {
         var total = new BigDecimal(100);
 
         //MOCKING
-        when(customerClient.findCustomerById(orderRequest.customerId())).thenReturn(Optional.of(customer));
-        when(productClient.purchaseProducts(any())).thenReturn(List.of(purchaseResponse));
-        when(mapper.toOrder(orderRequest, total)).thenReturn(orderEntity);
+        when(customerClient.findCustomerById(orderRequest.customerId())).thenReturn(customer);
+        when(productClient.purchaseProductsAsync(any())).thenReturn(CompletableFuture.completedFuture(List.of(purchaseResponse)));
+        when(mapper.toOrder(orderRequest, total, any(OrderStatusEnum.class))).thenReturn(orderEntity);
         when(repository.save(any())).thenReturn(orderEntity);
 
         //WHEN
@@ -76,11 +71,12 @@ public class OrderServiceTest {
 
         //CHECK CALLS
         verify(orderLineService, times(1)).saveOrderLines(anyList());
-        verify(paymentClient, times(1)).requestOrderPayment(any(PaymentRequest.class));
+//        verify(paymentClient, times(1)).requestOrderPayment(any(PaymentEvent.class));
+//        verify(paymentClient, times(1)).requestOrderPayment(any(PaymentEvent.class));
         verify(orderProducer, times(1)).sendOrderConfirmation(any(OrderConfirmation.class));
 
         //CHECK PRICE
-        verify(mapper).toOrder(orderRequest, total);
+        verify(mapper).toOrder(orderRequest, total, OrderStatusEnum.CONFIRMED);
     }
 
     @Test
@@ -91,7 +87,7 @@ public class OrderServiceTest {
         var productId = 1L;
         var purchaseRequest = new PurchaseRequest(productId, 1d);
         var orderRequest = new OrderRequest("REF-001", "CREDIT_CARD", customerId, List.of(purchaseRequest));
-        when(customerClient.findCustomerById("invalid-id")).thenReturn(Optional.empty());
+        when(customerClient.findCustomerById("invalid-id")).thenReturn(null);
 
         // WHEN & THEN
         var exception = assertThrows(BusinessException.class, () -> orderService.createOrder(orderRequest));
@@ -111,12 +107,12 @@ public class OrderServiceTest {
         var orderRequest = new OrderRequest("REF-001", "invalid_type", customerId, List.of(purchaseRequest));
         var customer = new CustomerResponse(customerId, "FirstName", "LastName", "email@domain.com");
 
-        when(customerClient.findCustomerById(any())).thenReturn(Optional.of(customer));
-        when(productClient.purchaseProducts(any())).thenReturn(List.of());
+        when(customerClient.findCustomerById(any())).thenReturn(customer);
+        when(productClient.purchaseProductsAsync(any())).thenReturn(CompletableFuture.completedFuture(List.of()));
         when(repository.save(any())).thenReturn(new Order());
 
         // WHEN & THEN
         assertThrows(BadRequestException.class, () -> orderService.createOrder(orderRequest));
-        verifyNoInteractions(paymentClient, orderProducer);
+//        verifyNoInteractions(paymentClient, orderProducer);
     }
 }

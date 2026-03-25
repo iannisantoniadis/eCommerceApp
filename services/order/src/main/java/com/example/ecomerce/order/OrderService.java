@@ -1,23 +1,22 @@
 package com.example.ecomerce.order;
 
-import com.example.ecomerce.customer.CustomerClient;
-import com.example.ecomerce.exception.BusinessException;
+import com.example.ecomerce.customer.CustomerClientService;
+import com.example.ecomerce.customer.CustomerResponse;
 import com.example.ecomerce.kafka.OrderConfirmation;
 import com.example.ecomerce.kafka.OrderProducer;
 import com.example.ecomerce.orderLine.OrderLineRequest;
 import com.example.ecomerce.orderLine.OrderLineService;
-import com.example.ecomerce.payment.PaymentClient;
-import com.example.ecomerce.payment.PaymentRequest;
+import com.example.ecomerce.kafka.payment.PaymentEvent;
+import com.example.ecomerce.payment.PaymentProducer;
 import com.example.ecomerce.product.ProductClient;
 import com.example.ecomerce.product.PurchaseResponse;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.ws.rs.BadRequestException;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.EnumUtils;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +26,7 @@ public class OrderService {
 
     private final OrderMapper mapper;
 
-    private final CustomerClient customerClient;
+    private final CustomerClientService customerClient;
 
     private final ProductClient productClient;
 
@@ -35,42 +34,53 @@ public class OrderService {
 
     private final OrderProducer orderProducer;
 
-    private final PaymentClient paymentClient;
+    private final PaymentProducer paymentProducer;
 
     public Long createOrder(OrderRequest request) {
         //Check customer --> OpenFeign
-        var customer = customerClient.findCustomerById(request.customerId())
-                .orElseThrow(() -> new BusinessException("Cannot create order; No Customer exists with this id: " + request.customerId()));
+        var customer = customerClient.findCustomerById(request.customerId());
         //Purchase the products --> product microservice
-        var purchasedProducts =  productClient.purchaseProducts(request.products());
-        BigDecimal total = purchasedProducts.stream().map(PurchaseResponse::price).reduce(BigDecimal.ZERO, BigDecimal::add);
+        var purchasedProducts =  productClient.purchaseProductsAsync(request.products());
+
+        CompletableFuture.allOf(customer,purchasedProducts).join();
+
+        // results
+        CustomerResponse customerResponse = customer.join();
+        List<PurchaseResponse> purchaseResponseList = purchasedProducts.join();
+
+        BigDecimal total = purchaseResponseList.stream()
+                .map(prod -> prod.price().multiply(BigDecimal.valueOf(prod.quantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         //Persist order
-        var order = repository.save(mapper.toOrder(request, total));
+        var order = repository.save(mapper.toOrder(request, total, OrderStatusEnum.CONFIRMED));
 
         //Persist order lines
-        orderLineService.saveOrderLines(request.products().stream().map(
+        orderLineService.saveOrderLines(purchaseResponseList.stream().map(
                 prod -> new OrderLineRequest(
                         null,
+                        prod.price(),
                         order.getId(),
                         prod.productId(),
                         prod.quantity()
                 )).toList());
 
-
         //Start payment process
-        if (!EnumUtils.isValidEnum(PaymentMethodEnum.class, request.paymentMethod())) {
-            throw new BadRequestException("This payment method is unknown: " + request.paymentMethod());
-        }
+        PaymentMethodEnum paymentMethod = PaymentMethodEnum.valueOf(request.paymentMethod());
 
-        var paymentRequest = new PaymentRequest(
+        var paymentEvent = new PaymentEvent(
                 total,
-                PaymentMethodEnum.valueOf(request.paymentMethod()),
+                paymentMethod,
                 order.getId(),
                 order.getReference(),
-                customer
+                customerResponse
         );
-        paymentClient.requestOrderPayment(paymentRequest);
+
+        // nefolosit downstream
+//        paymentClient.requestOrderPayment(paymentRequest).join();
+        // ORDER SERV --(PaymentRequest) kafka_topic:
+        paymentProducer.sendPayment(paymentEvent);
+
 
         //Send the order confirmation to notification microservice (kafka)
 
@@ -78,9 +88,9 @@ public class OrderService {
                 new OrderConfirmation(
                         request.reference(),
                         total,
-                        PaymentMethodEnum.valueOf(request.paymentMethod()),
-                        customer,
-                        purchasedProducts
+                        paymentMethod,
+                        customerResponse,
+                        purchaseResponseList
                 )
         );
         return order.getId();
@@ -94,5 +104,9 @@ public class OrderService {
         return repository.findById(orderId)
                 .map(mapper::toOrderResponse)
                 .orElseThrow(() -> new EntityNotFoundException("There is no order with id: " + orderId));
+    }
+
+    public void updateOrderStatus(Long orderId, OrderStatusEnum status) {
+        repository.updateOrderStatus(orderId, status);
     }
 }

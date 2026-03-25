@@ -19,11 +19,15 @@ spring:
     config:
       override.system-properties: false
 
-app:
-  keycloak:
-    realm: micro-services-api
-    authorization_url: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth
-    token_url: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
+  # To know where to validate JWT
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Use the container name
+          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          # Jars might need this if they can't reach the issuer during startup
+          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
 
 springdoc:
   swagger-ui:
@@ -31,12 +35,8 @@ springdoc:
       - url: http://localhost:8222
         description: API Gateway
 
-#  # To know where to validate JWT
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          # Use the container name 'keycloak-ms' as defined in your docker-compose
-#          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
-#          # Jars might need this if they can't reach the issuer during startup
-#          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+app:
+  keycloak:
+    realm: micro-services-api
+    authorization_url: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth
+    token_url: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token

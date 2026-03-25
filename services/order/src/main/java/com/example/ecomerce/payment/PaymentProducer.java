@@ -1,5 +1,6 @@
-package com.example.ecomerce.notification;
+package com.example.ecomerce.payment;
 
+import com.example.ecomerce.kafka.payment.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,16 +13,16 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class NotificationProducer {
+public class PaymentProducer {
 
     @Value("${spring.kafka.template.payment-topic}")
     private String topic;
 
-    private final KafkaTemplate<String, PaymentNotificationRequest> template;
+    private final KafkaTemplate<String, PaymentEvent> template;
 
-    public void sendNotification(PaymentNotificationRequest request) {
-        log.info("Sending notification with body<{}>", request);
-        Message<PaymentNotificationRequest> message = MessageBuilder
+    public void sendPayment(PaymentEvent request) {
+        log.info("Sending payment with body<{}>", request);
+        Message<PaymentEvent> message = MessageBuilder
                 .withPayload(request)
                 .setHeader(KafkaHeaders.TOPIC, topic)
                 .build();

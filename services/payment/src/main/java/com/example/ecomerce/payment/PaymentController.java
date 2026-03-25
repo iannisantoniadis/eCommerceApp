@@ -1,5 +1,6 @@
 package com.example.ecomerce.payment;
 
+import com.example.ecomerce.kafka.payment.PaymentEvent;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,15 +20,15 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Payments")
 public class PaymentController {
 
-    private final PaymentService service;
-
-    @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER')")
-    @Operation(description = "Endpoint to save payment and send the notification. Usable by CUSTOMER")
-    @SecurityRequirement(name = "Keycloak-JWT")
-    public ResponseEntity<Long> createPayment(
-            @RequestBody @Valid PaymentRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createPayment(request));
-    }
+//    private final PaymentService service;
+//
+//    @PostMapping
+//    @PreAuthorize("hasRole('CUSTOMER')")
+//    @Operation(description = "Endpoint to save payment and send the notification. Usable by CUSTOMER")
+//    @SecurityRequirement(name = "Keycloak-JWT")
+//    public ResponseEntity<Long> createPayment(
+//            @RequestBody @Valid PaymentEvent request
+//    ) {
+//        return ResponseEntity.status(HttpStatus.CREATED).body(service.createPayment(request));
+//    }
 }

@@ -28,5 +28,5 @@ public class OrderLine {
 
     private Double quantity;
 
-    private BigDecimal price;
+    private BigDecimal unitPrice;
 }

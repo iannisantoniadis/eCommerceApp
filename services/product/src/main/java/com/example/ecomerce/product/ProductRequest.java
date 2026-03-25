@@ -14,7 +14,6 @@ public record ProductRequest(
         Double availableQuantity,
         @Positive(message = "Price must be greater than 0!")
         BigDecimal price,
-
         @NotNull(message = "The product category must be set!")
         Long categoryId) {
 }

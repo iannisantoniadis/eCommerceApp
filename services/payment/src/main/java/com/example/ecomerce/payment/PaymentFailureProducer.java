@@ -1,5 +1,7 @@
-package com.example.ecomerce.notification;
+package com.example.ecomerce.payment;
 
+import com.example.ecomerce.kafka.payment.PaymentFailureEvent;
+import com.example.ecomerce.kafka.payment.PaymentSuccessEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,16 +14,16 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class NotificationProducer {
+public class PaymentFailureProducer {
 
-    @Value("${spring.kafka.template.payment-topic}")
+    @Value("${spring.kafka.template.payment-failure-topic}")
     private String topic;
 
-    private final KafkaTemplate<String, PaymentNotificationRequest> template;
+    private final KafkaTemplate<String, PaymentFailureEvent> template;
 
-    public void sendNotification(PaymentNotificationRequest request) {
-        log.info("Sending notification with body<{}>", request);
-        Message<PaymentNotificationRequest> message = MessageBuilder
+    public void sendPaymentFailure(PaymentFailureEvent request) {
+        log.info("Order <{}> with status FAILURE", request.orderId());
+        Message<PaymentFailureEvent> message = MessageBuilder
                 .withPayload(request)
                 .setHeader(KafkaHeaders.TOPIC, topic)
                 .build();

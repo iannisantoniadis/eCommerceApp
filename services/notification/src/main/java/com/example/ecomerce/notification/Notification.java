@@ -1,7 +1,7 @@
 package com.example.ecomerce.notification;
 
 import com.example.ecomerce.kafka.order.OrderConfirmation;
-import com.example.ecomerce.kafka.payment.PaymentConfirmation;
+import com.example.ecomerce.kafka.payment.PaymentEvent;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -25,7 +25,7 @@ public class Notification {
 
     private OrderConfirmation orderConfirmation;
 
-    private PaymentConfirmation paymentConfirmation;
+    private PaymentEvent paymentEvent;
 
 
 }

@@ -22,6 +22,6 @@ public class OrderLineController {
     public ResponseEntity<List<OrderLineResponse>> findAllByOrderId(
             @PathVariable("order-id") Long orderId
     ) {
-        return ResponseEntity.ok(service.findAllByOrderId(orderId));
+        return ResponseEntity.ok(service.findAllByOrderIdToResponse(orderId));
     }
 }

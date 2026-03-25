@@ -9,13 +9,33 @@ import org.springframework.stereotype.Service;
 @Service
 public class KafkaPaymentTopicConfig {
 
-    @Value("${spring.kafka.template.default-topic}")
-    private String topic;
+    @Value("${spring.kafka.template.payment-topic}")
+    private String paymentTopic;
+
+    @Value("${spring.kafka.template.payment-success-topic}")
+    private String paymentSuccessTopic;
+
+    @Value("${spring.kafka.template.payment-failure-topic}")
+    private String paymentFailureTopic;
 
     @Bean
     public NewTopic paymentTopic(){
         return TopicBuilder
-                .name(topic)
+                .name(paymentTopic)
+                .build();
+    }
+
+    @Bean
+    public NewTopic paymentSuccessTopic(){
+        return TopicBuilder
+                .name(paymentSuccessTopic)
+                .build();
+    }
+
+    @Bean
+    public NewTopic paymentFailureTopic(){
+        return TopicBuilder
+                .name(paymentFailureTopic)
                 .build();
     }
 }

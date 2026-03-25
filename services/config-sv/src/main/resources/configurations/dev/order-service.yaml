@@ -11,23 +11,35 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   kafka:
     template:
-      default-topic: order-topic
+#      default-topic: order-topic
+      order-topic: order-topic
+      payment-topic: payment-topic
+      payment-success-topic: payment-success-topic
+      payment-failure-topic: payment-failure-topic
     producer:
       bootstrap-servers: ${KAFKA_SERVER:localhost:9092}
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.type.mapping: orderConfirmation:com.example.ecomerce.kafka.OrderConfirmation
+    consumer:
+#      group-id: orderGroup
+      auto-offset-reset: earliest
+      bootstrap-servers: localhost:9092
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        # inner deserializer that does the actual work
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        #  Tells the consumer what kind of object it should expect, where the obj is coming from, what object to trust / consume
+        spring.json.type.mapping: >
+          paymentSuccessEvent:com.example.ecomerce.kafka.payment.PaymentSuccessEvent,
+          paymentFailureEvent:com.example.ecomerce.kafka.payment.PaymentFailureEvent
+        spring.json.trusted.packages: '*'
 
-  # To know where to validate JWT
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          # Use the container name 'keycloak-ms' as defined in your docker-compose
-          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
-          # Jars might need this if they can't reach the issuer during startup
-          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+  threads:
+    virtual:
+      enabled: true
 
 server:
   port: 8070

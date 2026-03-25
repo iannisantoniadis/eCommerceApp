@@ -25,7 +25,7 @@ public class ProductService {
         requestList = requestList.stream().sorted(Comparator.comparingLong(ProductPurchaseRequest::productId)).toList();
         var productIds = requestList.stream().map(ProductPurchaseRequest::productId).toList();
         var storedProducts = repository.findAllByIdInOrderById(productIds);
-        //Check whether we have the products order by the customer, send error if not, along with ids
+        //Check whether we have the products ordered by the customer, send error if not, along with ids
         List<Long> missingIds = productIds.stream()
                 .filter(id -> !storedProducts.stream().map(Product::getId).toList().contains(id))
                 .toList();
@@ -37,23 +37,20 @@ public class ProductService {
         //Corner case: the customer orders the entire quantity in stock for a product -> delete product when quantity reaches 0
         Map<Long, Double> insufficientProducts = new HashMap<>();
         List<ProductPurchaseResponse> returnList = new ArrayList<>();
-        for (int i = 0; i < requestList.size(); i++){
-            if (storedProducts.get(i).getAvailableQuantity() < requestList.get(i).quantity()){
+        for (int i = 0; i < requestList.size(); i++) {
+            if (storedProducts.get(i).getAvailableQuantity() < requestList.get(i).quantity()) {
                 insufficientProducts.put(requestList.get(i).productId(), requestList.get(i).quantity());
-            }
-            else {
-                var difference = storedProducts.get(i).getAvailableQuantity() - requestList.get(i).quantity();
-                returnList.add(mapper.toProductPurchaseResponse(storedProducts.get(i), requestList.get(i)));
-                if (difference == 0){
-                    storedProducts.remove(storedProducts.get(i));
-                    repository.delete(storedProducts.get(i));
-                }
-                storedProducts.get(i).setAvailableQuantity(storedProducts.get(i).getAvailableQuantity() - requestList.get(i).quantity());
             }
         }
         if (!insufficientProducts.isEmpty()){
-            throw  new ProductPurchaseException("One or more product is in insufficient quantity: " +
+            throw new ProductPurchaseException("One or more product is in insufficient quantity: " +
                     insufficientProducts.entrySet().stream().map(es -> es.getKey() + ": " + es.getValue()).toList());
+        }
+        for (int i = 0; i < requestList.size(); i++)  {
+            var difference = storedProducts.get(i).getAvailableQuantity() - requestList.get(i).quantity();
+            returnList.add(mapper.toProductPurchaseResponse(storedProducts.get(i), requestList.get(i)));
+            storedProducts.get(i).setAvailableQuantity(difference);
+
         }
         repository.saveAll(storedProducts);
         return returnList;
@@ -67,5 +64,21 @@ public class ProductService {
 
     public List<ProductResponse> findAll() {
         return repository.findAll().stream().map(mapper::toProductResponse).toList();
+    }
+
+    public void restoreProducts(List<ProductPurchaseRequest> requestList) {
+        requestList = requestList.stream().sorted(Comparator.comparingLong(ProductPurchaseRequest::productId)).toList();
+
+        var productsToRestore = repository.findAllByIdInOrderById(requestList.stream().map(ProductPurchaseRequest::productId).toList());
+        if (requestList.size() != productsToRestore.size()){
+            throw new ProductPurchaseException("The following product ids are invalid: "
+                    + requestList.stream()
+                    .filter(req -> !productsToRestore.stream().map(Product::getId).toList().contains(req.productId())).toList());
+        }
+        for (int i=0; i< productsToRestore.size(); i++){
+            Product product = productsToRestore.get(i);
+            product.setAvailableQuantity(product.getAvailableQuantity() + requestList.get(i).quantity());
+        }
+        repository.saveAll(productsToRestore);
     }
 }

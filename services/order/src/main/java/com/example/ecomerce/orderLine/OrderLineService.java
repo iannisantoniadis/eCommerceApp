@@ -23,9 +23,17 @@ public class OrderLineService {
                 .stream().map(OrderLine::getId).toList();
     }
 
-    public List<OrderLineResponse> findAllByOrderId(Long orderId) {
+    public List<OrderLineResponse> findAllByOrderIdToResponse(Long orderId) {
         return repository.findAllByOrderId(orderId)
                 .stream().map(mapper::toOrderLineResponse)
                 .toList();
+    }
+
+    public List<OrderLine> findAllByOrderId(Long orderId) {
+        return repository.findAllByOrderId(orderId);
+    }
+
+    public void deleteAllById(List<Long> ids){
+        repository.deleteAllById(ids);
     }
 }

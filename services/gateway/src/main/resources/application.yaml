@@ -1,5 +1,5 @@
-server:
-  port: 8222
+#server:
+#  port: 8222
 
 spring:
   application:
@@ -7,49 +7,49 @@ spring:
   config:
     import: optional:configserver:http://localhost:8888
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:9098/realms/micro-services
-
-
-  cloud:
-    gateway:
-      server:
-        webflux:
-          discovery:
-            locator:
-              enabled: true
-              lower-case-service-id: true
-          routes:
-            - id: customer-service
-              uri: lb://CUSTOMER-SERVICE
-              predicates:
-                - Path=/api/v1/customers/**
-              filters:
-                - TokenRelay=
-            - id: order-service
-              uri: lb://ORDER-SERVICE
-              predicates:
-                - Path=/api/v1/orders/**
-              filters:
-                - TokenRelay=
-            - id: order-lines-service
-              uri: lb://ORDER-SERVICE
-              predicates:
-                - Path=/api/v1/order-lines/**
-              filters:
-                - TokenRelay=
-            - id: products-service
-              uri: lb://PRODUCT-SERVICE
-              predicates:
-                - Path=/api/v1/products/**
-              filters:
-                - TokenRelay=
-            - id: payment-service
-              uri: lb://PAYMENT-SERVICE
-              predicates:
-                - Path=/api/v1/payments/**
-              filters:
-                - TokenRelay=
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: http://localhost:9098/realms/micro-services
+#
+#
+#  cloud:
+#    gateway:
+#      server:
+#        webflux:
+#          discovery:
+#            locator:
+#              enabled: true
+#              lower-case-service-id: true
+#          routes:
+#            - id: customer-service
+#              uri: lb://CUSTOMER-SERVICE
+#              predicates:
+#                - Path=/api/v1/customers/**
+#              filters:
+#                - TokenRelay=
+#            - id: order-service
+#              uri: lb://ORDER-SERVICE
+#              predicates:
+#                - Path=/api/v1/orders/**
+#              filters:
+#                - TokenRelay=
+#            - id: order-lines-service
+#              uri: lb://ORDER-SERVICE
+#              predicates:
+#                - Path=/api/v1/order-lines/**
+#              filters:
+#                - TokenRelay=
+#            - id: products-service
+#              uri: lb://PRODUCT-SERVICE
+#              predicates:
+#                - Path=/api/v1/products/**
+#              filters:
+#                - TokenRelay=
+#            - id: payment-service
+#              uri: lb://PAYMENT-SERVICE
+#              predicates:
+#                - Path=/api/v1/payments/**
+#              filters:
+#                - TokenRelay=

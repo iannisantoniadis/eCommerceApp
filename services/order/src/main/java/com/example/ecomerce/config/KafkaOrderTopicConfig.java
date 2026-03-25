@@ -9,7 +9,7 @@ import org.springframework.kafka.config.TopicBuilder;
 @Configuration
 public class KafkaOrderTopicConfig {
 
-    @Value("${spring.kafka.template.default-topic}")
+    @Value("${spring.kafka.template.order-topic}")
     private String topic;
 
     @Bean

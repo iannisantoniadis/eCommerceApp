@@ -32,6 +32,9 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private PaymentMethodEnum paymentMethod;
 
+    @Enumerated(EnumType.STRING)
+    private OrderStatusEnum status = OrderStatusEnum.PENDING;
+
     private String customerId;
 
     @OneToMany(mappedBy = "order")

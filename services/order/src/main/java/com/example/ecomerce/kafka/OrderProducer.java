@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Slf4j
 public class OrderProducer {
-    @Value("${spring.kafka.template.default-topic}")
+    @Value("${spring.kafka.template.order-topic}")
     private String topic;
 
     private final KafkaTemplate<String, OrderConfirmation> kafkaTemplate;

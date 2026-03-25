@@ -10,14 +10,14 @@ spring:
 
   kafka:
     consumer:
-      group-id: paymentGroup, orderGroup
+      group-id: notificationGroup
       auto-offset-reset: earliest
       bootstrap-servers: kafka:9092
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         #        Tells the consumer what kind of object it should expect, where the obj is coming from, what object to trust / consume
-        spring.json.type.mapping: orderConfirmation:com.example.ecomerce.kafka.order.OrderConfirmation,paymentConfirmation:com.example.ecomerce.kafka.payment.PaymentConfirmation
+        spring.json.type.mapping: orderConfirmation:com.example.ecomerce.kafka.order.OrderConfirmation,paymentEvent:com.example.ecomerce.kafka.payment.PaymentEvent
         spring.json.trusted.packages: '*'
 
   mail:

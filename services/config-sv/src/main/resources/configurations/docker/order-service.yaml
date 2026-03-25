@@ -11,13 +11,17 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   kafka:
     template:
-      default-topic: order-topic
+      order-topic: order-topic
+      payment-topic: payment-topic
     producer:
       bootstrap-servers: kafka
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring.json.type.mapping: orderConfirmation:com.example.ecomerce.kafka.OrderConfirmation
+        spring.json.type.mapping: >
+          paymentCompletionEvent:com.example.ecomerce.kafka.payment.PaymentCompletionEvent,
+          paymentFailureEvent:com.example.ecomerce.kafka.payment.PaymentFailureEvent
+        spring.json.trusted.packages: '*'
 
   # To know where to validate JWT
   security:
@@ -28,6 +32,11 @@ spring:
           issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
           # Jars might need this if they can't reach the issuer during startup
           jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+
+  threads:
+    virtual:
+      enabled: true
+
 
 server:
   port: 8070

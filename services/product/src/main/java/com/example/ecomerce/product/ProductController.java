@@ -59,4 +59,15 @@ public class ProductController {
     public ResponseEntity<List<ProductResponse>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }
+
+    @PostMapping("/restore")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @Operation(description = "Accessed by the orchestrator to purchase a product, usable by CUSTOMER")
+    @SecurityRequirement(name = "Keycloak-JWT")
+    public ResponseEntity<Void> restituteProducts(
+            @RequestBody List<ProductPurchaseRequest> requestList
+    ) {
+        service.restoreProducts(requestList);
+        return ResponseEntity.noContent().build();
+    }
 }

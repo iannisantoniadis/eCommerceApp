@@ -9,10 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record OrderRequest(
-//        Long id,
         String reference,
-//        @Positive(message = "Order amount should be positive!")
-//        BigDecimal amount,
         @NotNull(message = "Payment method should be precised!")
         @EnumValidator(enumClass = PaymentMethodEnum.class, message = "This payment method is unknown!")
         String paymentMethod,

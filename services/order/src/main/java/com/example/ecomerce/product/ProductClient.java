@@ -5,12 +5,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -52,4 +54,23 @@ public class ProductClient {
 
         return responseList;
     }
+
+    public void restoreProducts(List<PurchaseRequest> requestList) {
+        restClient.post()
+                .uri(productUrl + "/restore")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(requestList)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
+                    throw new BusinessException("An error occurred while processing the product purchase: " + res.getStatusCode());
+                })
+                .toBodilessEntity();
+    }
+
+    @Async("virtualThreadExecutor")
+    public CompletableFuture<List<PurchaseResponse>> purchaseProductsAsync(List<PurchaseRequest> requestBody){
+        return CompletableFuture.completedFuture(purchaseProducts(requestBody));
+    }
+
+
 }

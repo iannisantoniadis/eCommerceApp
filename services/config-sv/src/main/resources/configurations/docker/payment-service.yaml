@@ -11,20 +11,21 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   kafka:
     template:
-      default-topic: payment-topic
+      order-topic: order-topic
+      payment-topic: payment-topic
     producer:
       bootstrap-servers: kafka:9092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring.json.type.mapping: paymentConfirmation:com.example.ecomerce.notification.PaymentNotificationRequest
+        spring.json.type.mapping: paymentEvent:com.example.ecomerce.payment.PaymentEvent
 
   # To know where to validate JWT
   security:
     oauth2:
       resourceserver:
         jwt:
-          # Use the container name 'keycloak-ms' as defined in your docker-compose
+          # Use the container name
           issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
           # Jars might need this if they can't reach the issuer during startup
           jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
