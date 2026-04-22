@@ -16,9 +16,9 @@ spring:
       resourceserver:
         jwt:
           # Use the container name 'keycloak-ms' as defined in your docker-compose
-          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          issuer-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}
           # Jars might need this if they can't reach the issuer during startup
-          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+          jwk-set-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
 
 server:
   port: 8090

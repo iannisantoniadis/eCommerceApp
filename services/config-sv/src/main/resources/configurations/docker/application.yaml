@@ -1,6 +1,7 @@
 eureka:
   instance:
-    hostname: discovery-service
+#    hostname: discovery-service
+    prefer-ip-address: true
   client:
 #    register-with-eureka: false
 #    fetch-registry: false
@@ -14,6 +15,20 @@ management:
     web:
       exposure:
         include: health
+#  zipkin:
+#    tracing:
+#      endpoint: http://zipkin:9411/api/v2/spans
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: b3_multi
+    export:
+      zipkin:
+        endpoint: http://zipkin:9411/api/v2/spans
+  observations:
+    key-values:
+      application: ${spring.application.name}
 
 spring:
   cloud:
@@ -22,22 +37,7 @@ spring:
 
 app:
   keycloak:
-    realm: micro-services-api
-    authorization_url: keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth
-    token_url: keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
-
-springdoc:
-  swagger-ui:
-    servers:
-      - url: http://gateway-service:8222
-        description: API Gateway
-
-## To know where to validate JWT
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          # Use the container name 'keycloak-ms' as defined in your docker-compose
-#          issuer-uri: http://keycloak-ms:8080/realms/${KEYCLOAK_REALM}
-#          # Jars might need this if they can't reach the issuer during startup
-#          jwk-set-uri: http://keycloak-ms:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+    realm: micro-services
+    authorization_url: http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth
+    token_url: http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
+  gateway-url: http://localhost:8222

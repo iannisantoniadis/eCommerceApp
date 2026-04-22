@@ -10,6 +10,7 @@ spring:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   kafka:
+    bootstrap-servers: localhost:9092
     template:
 #      default-topic: payment-topic
       order-topic: order-topic

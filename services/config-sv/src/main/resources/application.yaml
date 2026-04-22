@@ -10,6 +10,8 @@ spring:
     config:
       server:
         native:
-          search-locations: classpath:/configurations/dev
+          search-locations: classpath:/configurations/${SOURCE_FOLDER:dev}
   config:
+    activate:
+      on-profile: native
     import: optional:file:../../.env[.properties]

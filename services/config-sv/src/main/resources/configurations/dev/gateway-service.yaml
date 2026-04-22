@@ -11,7 +11,7 @@ spring:
               lower-case-service-id: true
           routes:
             - id: customer-service
-              uri: lb://CUSTOMER-SERVICE
+              uri: lb://customer-service
               predicates:
                 - Path=/api/v1/customers/**, /customer-service/**
               filters:
@@ -19,27 +19,27 @@ spring:
                 #Se scoate prima bucata din url - /customer-service si se trimite doar /api/v3/api-docs mai departe catre service
                 - RewritePath=/customer-service/(?<segment>.*), /$\{segment}
             - id: order-service
-              uri: lb://ORDER-SERVICE
+              uri: lb://order-service
               predicates:
                 - Path=/api/v1/orders/**, /order-service/**
               filters:
                 - TokenRelay=
                 - RewritePath=/order-service/(?<segment>.*), /$\{segment}
             - id: order-lines-service
-              uri: lb://ORDER-SERVICE
+              uri: lb://order-service
               predicates:
                 - Path=/api/v1/order-lines/**
               filters:
                 - TokenRelay=
-            - id: products-service
-              uri: lb://PRODUCT-SERVICE
+            - id: product-service
+              uri: lb://product-service
               predicates:
                 - Path=/api/v1/products/**, /product-service/**
               filters:
                 - TokenRelay=
                 - RewritePath=/product-service/(?<segment>.*), /$\{segment}
             - id: payment-service
-              uri: lb://PAYMENT-SERVICE
+              uri: lb://payment-service
               predicates:
                 - Path=/api/v1/payments/**, /payment-service/**
               filters:
@@ -47,16 +47,16 @@ spring:
                 - RewritePath=/payment-service/(?<segment>.*), /$\{segment}
 
 management:
-  tracing:
-    sampling:
-      probability: 1.0
-    export:
-      zipkin:
-        endpoint: http://localhost:9411/api/v2/spans
+#  tracing:
+#    sampling:
+#      probability: 1.0
+#    export:
+#      zipkin:
+#        endpoint: http://localhost:9411/api/v2/spans
   endpoints:
     web:
       exposure:
-        include: "gateway"
+        include: "gateway,health"
   endpoint:
     gateway:
       access: read_only

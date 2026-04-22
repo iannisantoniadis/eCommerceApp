@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5433/payments
+    url: jdbc:postgresql://postgres:5432/payments
     username: ${PG_USER}
     password: ${PG_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -9,16 +9,42 @@ spring:
       ddl-auto: update
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+#  kafka:
+#    template:
+#      order-topic: order-topic
+#      payment-topic: payment-topic
+#    producer:
+#      bootstrap-servers: kafka:9092
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+#      properties:
+#        spring.json.type.mapping: paymentEvent:com.example.ecomerce.payment.PaymentEvent
   kafka:
+    bootstrap-servers: kafka:29092
     template:
+      #      default-topic: payment-topic
       order-topic: order-topic
       payment-topic: payment-topic
+      payment-success-topic: payment-success-topic
+      payment-failure-topic: payment-failure-topic
     producer:
-      bootstrap-servers: kafka:9092
+      bootstrap-servers: kafka:29092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring.json.type.mapping: paymentEvent:com.example.ecomerce.payment.PaymentEvent
+        spring.json.type.mapping: paymentEvent:com.example.ecomerce.kafka.payment.PaymentEvent
+    consumer:
+      #      group-id: orderGroup
+      auto-offset-reset: earliest
+      bootstrap-servers: kafka:29092
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        # inner deserializer that does the actual work
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        #        Tells the consumer what kind of object it should expect, where the obj is coming from, what object to trust / consume
+        spring.json.type.mapping: paymentEvent:com.example.ecomerce.kafka.payment.PaymentEvent
+        spring.json.trusted.packages: '*'
 
   # To know where to validate JWT
   security:
@@ -26,9 +52,9 @@ spring:
       resourceserver:
         jwt:
           # Use the container name
-          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          issuer-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}
           # Jars might need this if they can't reach the issuer during startup
-          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+          jwk-set-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
 server:
   port: 8060
   forward-headers-strategy: framework

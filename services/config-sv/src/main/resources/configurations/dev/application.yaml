@@ -12,6 +12,20 @@ management:
     web:
       exposure:
         include: health
+#  zipkin:
+#    tracing:
+#      endpoint: http://localhost:9411/api/v2/spans
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: b3_multi
+    export:
+      zipkin:
+        endpoint: http://localhost:9411/api/v2/spans
+  observations:
+    key-values:
+      application: ${spring.application.name}
 
 
 spring:
@@ -25,9 +39,9 @@ spring:
       resourceserver:
         jwt:
           # Use the container name
-          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          issuer-uri: http://localhost:8080/realms/${KEYCLOAK_REALM}
           # Jars might need this if they can't reach the issuer during startup
-          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+          jwk-set-uri: http://localhost:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
 
 springdoc:
   swagger-ui:
@@ -37,6 +51,7 @@ springdoc:
 
 app:
   keycloak:
-    realm: micro-services-api
-    authorization_url: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth
-    token_url: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
+    realm: micro-services
+    authorization_url: http://localhost:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth
+    token_url: http://localhost:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
+  gateway-url: http://localhost:8222

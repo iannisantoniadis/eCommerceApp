@@ -8,12 +8,11 @@ Simple application that meets the various requirements of an online commerce pla
 
 * JAVA 21
 * Docker
-* An IDE that supports .env file injection into the run configuration (I, for one, used Intellij IDEA 2022 with EnvFile Plugin), without injection, the services will try to connect to their respective DB using hardcoded variable strings ${}
+* An IDE that supports .env file injection into the run configuration (I, for one, used IntelliJ IDEA 2022 with EnvFile Plugin), without injection, the services will try to connect to their respective DB using hardcoded variable strings ${}
 * Postman for testing
 
 ### Installing
 
-* While it is present, the current docker-compose.yaml **HAS NOT BEEN TESTED, I DO NOT GUARANTEE THAT THE APP CAN BE FULLY DOCKERIZED AT THE MOMENT.**
 * To instantiate the prerequisite containers, run docker-compose.infra.yaml
 * If you chose to use Postman for testing, I have included in the folder "postman_stuff" the following:
   * The environment data for CUSTOMER (with customer user credentials)
@@ -21,10 +20,16 @@ Simple application that meets the various requirements of an online commerce pla
   * The collection with the endpoints of most concern
 * For Keycloak, I have included the realm data in the folder "keycloak_stuff". The users that must be instantiated by hand are <u>customer</u> and <u>visitor</u>, passwords being their own names (make sure to propagate any changes in the Postman environments).
   * Make sure to assign the CUSTOMER realm role to customer and VISITOR to visitor as the security filter chains currently look for the **REALM ROLES** (that will be addressed later)
+* **FOR FULLY DOCKERIZED DEPLOY**:
+  * Make sure to add in the windows hosts file: 127.0.0.1 keycloak
+  * After deploying and restoring the keycloak realm, change the front end url in the realm settings from localhost:8080 to keycloak:8080, otherwise keycloak will redirect you to localhost, which is a concern because the cookie is emitted by keycloak 
+  * **TLDR:** 
+    * C:\Windows\System32\drivers\etc - In hosts add 127.0.0.1 keycloak
+    * Keycloak UI - realm settings (of micro-services)  - front end url: **http://localhost:8080 → http://keycloak:8080**
 
 ### Order of deployment of services
 
-* Config - Discovery - Business Services - Gateway
+* Config - Discovery - Payment - Other Business Services - Gateway
 
 ### Request Body examples
 * post_order:
@@ -63,5 +68,5 @@ Simple application that meets the various requirements of an online commerce pla
 
 * Make security filter chains extract client roles instead of realm roles
 * ~~Add Swagger~~
-* Fully Dockerize the app
+* ~~Fully Dockerize the app~~
 * Code cleanup

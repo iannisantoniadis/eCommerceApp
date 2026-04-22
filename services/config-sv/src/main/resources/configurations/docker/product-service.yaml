@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5433/products
+    url: jdbc:postgresql://postgres:5432/products
     username: ${PG_USER}
     password: ${PG_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -22,9 +22,9 @@ spring:
       resourceserver:
         jwt:
           # Use the container name 'keycloak-ms' as defined in your docker-compose
-          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          issuer-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}
           # Jars might need this if they can't reach the issuer during startup
-          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+          jwk-set-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
 
 #springdoc:
 #  swagger-ui:

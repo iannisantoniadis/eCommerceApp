@@ -7,15 +7,28 @@ spring:
     database: notifications
     authentication-database: admin
 #    uri: mongodb://localhost:27017/notifications
+  # To know where to validate JWT
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Use the container name 'keycloak-ms' as defined in your docker-compose
+          issuer-uri: http://kdeycloak:8080/realms/${KEYCLOAK_REALM}
+          # Jars might need this if they can't reach the issuer during startup
+          jwk-set-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+
 
   kafka:
+    bootstrap-servers: kafka:29092
     consumer:
       group-id: notificationGroup
       auto-offset-reset: earliest
-      bootstrap-servers: kafka:9092
+      bootstrap-servers: kafka:29092
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
+        # inner deserializer that does the actual work
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
         #        Tells the consumer what kind of object it should expect, where the obj is coming from, what object to trust / consume
         spring.json.type.mapping: orderConfirmation:com.example.ecomerce.kafka.order.OrderConfirmation,paymentEvent:com.example.ecomerce.kafka.payment.PaymentEvent
         spring.json.trusted.packages: '*'
@@ -35,16 +48,6 @@ spring:
         connectiontimeout: 5000
         timeout: 3000
         writetimeout: 5000
-
-  # To know where to validate JWT
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          # Use the container name 'keycloak-ms' as defined in your docker-compose
-          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
-          # Jars might need this if they can't reach the issuer during startup
-          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
 
 server:
   port: 8040

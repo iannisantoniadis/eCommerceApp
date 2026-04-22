@@ -20,7 +20,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableJpaAuditing
 @OpenAPIDefinition(
 		info = @Info(title = "Order Service API", version = "1.0"),
-		servers = @Server(url = "${springdoc.swagger-ui.servers[0].url}", description = "API Gateway"))
+		servers = @Server(url = "${app.gateway-url}", description = "API Gateway"))
 @SecurityScheme(
 		name = "Keycloak-JWT",
 		type = SecuritySchemeType.OAUTH2,

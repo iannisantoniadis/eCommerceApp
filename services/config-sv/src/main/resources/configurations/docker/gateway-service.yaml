@@ -8,40 +8,43 @@ spring:
       server:
         webflux:
           discovery:
-            locator:
-              enabled: true
               lower-case-service-id: true
           routes:
             - id: customer-service
-              uri: lb://CUSTOMER-SERVICE
+              uri: lb://customer-service
               predicates:
-                - Path=/api/v1/customers/**
+                - Path=/api/v1/customers/**, /customer-service/**
               filters:
                 - TokenRelay=
+                #Se scoate prima bucata din url - /customer-service si se trimite doar /api/v3/api-docs mai departe catre service
+                - RewritePath=/customer-service/(?<segment>.*), /$\{segment}
             - id: order-service
-              uri: lb://ORDER-SERVICE
+              uri: lb://order-service
               predicates:
-                - Path=/api/v1/orders/**
+                - Path=/api/v1/orders/**, /order-service/**
               filters:
                 - TokenRelay=
+                - RewritePath=/order-service/(?<segment>.*), /$\{segment}
             - id: order-lines-service
-              uri: lb://ORDER-SERVICE
+              uri: lb://order-service
               predicates:
                 - Path=/api/v1/order-lines/**
               filters:
                 - TokenRelay=
-            - id: products-service
-              uri: lb://PRODUCT-SERVICE
+            - id: product-service
+              uri: lb://product-service
               predicates:
-                - Path=/api/v1/products/**
+                - Path=/api/v1/products/**, /product-service/**
               filters:
                 - TokenRelay=
+                - RewritePath=/product-service/(?<segment>.*), /$\{segment}
             - id: payment-service
-              uri: lb://PAYMENT-SERVICE
+              uri: lb://payment-service
               predicates:
-                - Path=/api/v1/payments/**
+                - Path=/api/v1/payments/**, /payment-service/**
               filters:
                 - TokenRelay=
+                - RewritePath=/payment-service/(?<segment>.*), /$\{segment}
 
   # To know where to validate JWT
   security:
@@ -49,25 +52,25 @@ spring:
       resourceserver:
         jwt:
           # Use the container name 'keycloak-ms' as defined in your docker-compose
-          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          issuer-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}
           # Jars might need this if they can't reach the issuer during startup
-          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+          jwk-set-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
 #eureka:
 #  client:
 #    service-url:
 #      defaultZone: http://localhost:8761/eureka/
 
 management:
-  tracing:
-    sampling:
-      probability: 1.0
-    export:
-      zipkin:
-        endpoint: zipkin:9411/api/v2/spans
+#  tracing:
+#    sampling:
+#      probability: 1.0
+#    export:
+#      zipkin:
+#        endpoint: http://zipkin:9411/api/v2/spans
   endpoints:
     web:
       exposure:
-        include: "gateway"
+        include: "gateway,health"
   endpoint:
     gateway:
       access: read_only
@@ -85,20 +88,30 @@ springdoc:
 #    config-url: /v3/api-docs/swagger-config
 #    urls-primary-name: E-Commerce App
   enable-native-support: true
+  show-common-extensions: true
   api-docs:
     path: /v3/api-docs
   swagger-ui:
+    disable-swagger-default-url: true
     path: /swagger-ui.html
     enabled: true
     config-url: /v3/api-docs/swagger-config
     urls-primary-name: E-Commerce App
+    servers:
+      - url: http://localhost:8222
+        description: API Gateway
+    oauth2-redirect-url: http://localhost:8222/swagger-ui/oauth2-redirect.html
+    oauth:
+      client_id: micro-services-api
+      use-pkce-with-authorization-code-grant: true
+      scopes: "openid profile"
 
     urls:
       - name: Order Service
-        url: order-service:8070/v3/api-docs
+        url: /order-service/v3/api-docs
       - name: Product Service
-        url: product-service:8050/v3/api-docs
+        url: /product-service/v3/api-docs
       - name: Customer Service
-        url: customer-service:8090/v3/api-docs
+        url: /customer-service/v3/api-docs
       - name: Payment Service
-        url: payment-service:8060/v3/api-docs
+        url: /payment-service/v3/api-docs

@@ -10,16 +10,33 @@ spring:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   kafka:
+    bootstrap-servers: kafka:29092
     template:
       order-topic: order-topic
       payment-topic: payment-topic
+      payment-success-topic: payment-success-topic
+      payment-failure-topic: payment-failure-topic
     producer:
-      bootstrap-servers: kafka
+      bootstrap-servers: kafka:29092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.type.mapping: >
-          paymentCompletionEvent:com.example.ecomerce.kafka.payment.PaymentCompletionEvent,
+          paymentCompletionEvent:com.example.ecomerce.kafka.payment.PaymentSuccessEvent,
+          paymentFailureEvent:com.example.ecomerce.kafka.payment.PaymentFailureEvent
+        spring.json.trusted.packages: '*'
+    consumer:
+      #      group-id: orderGroup
+      auto-offset-reset: earliest
+      bootstrap-servers: kafka:29092
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        # inner deserializer that does the actual work
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        #  Tells the consumer what kind of object it should expect, where the obj is coming from, what object to trust / consume
+        spring.json.type.mapping: >
+          paymentSuccessEvent:com.example.ecomerce.kafka.payment.PaymentSuccessEvent,
           paymentFailureEvent:com.example.ecomerce.kafka.payment.PaymentFailureEvent
         spring.json.trusted.packages: '*'
 
@@ -29,9 +46,9 @@ spring:
       resourceserver:
         jwt:
           # Use the container name 'keycloak-ms' as defined in your docker-compose
-          issuer-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}
+          issuer-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}
           # Jars might need this if they can't reach the issuer during startup
-          jwk-set-uri: http://localhost:9098/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+          jwk-set-uri: http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
 
   threads:
     virtual:
@@ -44,6 +61,6 @@ server:
 
 application:
   config:
-    customer-url: http://customer-service/api/v1/customers
-    product-url: http://product-service/api/v1/products
-    payment-url: http://payment-service/api/v1/payments
+    customer-url: http://customer-service:8090/api/v1/customers
+    product-url: http://product-service:8050/api/v1/products
+    payment-url: http://payment-service:8060/api/v1/payments

@@ -1,5 +1,5 @@
 include:
-  - docker-compose.infra.yml
+  - ./docker-compose.infra.yaml
 
 services:
   # JAVA STUFF
@@ -10,32 +10,66 @@ services:
     networks:
       - microservices-net
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+#      - SPRING_PROFILES_ACTIVE=docker
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - SOURCE_FOLDER=docker
+      - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -XX:MinRAMPercentage=50.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M # Hard limit (Docker kills it if exceeded)
+        reservations:
+          memory: 256M # Soft limit (Docker tries to guarantee this)
+    env_file:
+      - .env
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 10
-      depends_on:
-        postgres:
-          condition: service_healthy
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    restart: on-failure
 
   discovery-service:
     build:
       context: ./services/discovery
       dockerfile: Dockerfile
+    ports:
+      - 8761:8761
+    env_file:
+      - .env
     networks:
       - microservices-net
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - CONFIG_SERVER_URL=config-sv
+      - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -XX:MinRAMPercentage=50.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M # Hard limit (Docker kills it if exceeded)
+        reservations:
+          memory: 256M # Soft limit (Docker tries to guarantee this)
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 10
-      depends_on:
-        postgres:
-          condition: service_healthy
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    restart: on-failure
 
   customer-service:
     build:
@@ -45,17 +79,35 @@ services:
       - microservices-net
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      - config-sv
-      - discovery-service
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - CONFIG_SERVER_URL=config-sv
+      - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -XX:MinRAMPercentage=50.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M # Hard limit (Docker kills it if exceeded)
+        reservations:
+          memory: 256M # Soft limit (Docker tries to guarantee this)
+    env_file:
+      - .env
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8090/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 10
-      depends_on:
-        config-sv:
-          condition: service_healthy
+      start_period: 20s
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+      config-sv:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+    restart: on-failure
 
   order-service:
     build:
@@ -65,17 +117,37 @@ services:
       - microservices-net
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      - config-sv
-      - discovery-service
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - CONFIG_SERVER_URL=config-sv
+      - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -XX:MinRAMPercentage=50.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M # Hard limit (Docker kills it if exceeded)
+        reservations:
+          memory: 256M # Soft limit (Docker tries to guarantee this)
+    env_file:
+      - .env
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8070/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 10
-      depends_on:
-        config-sv:
-          condition: service_healthy
+      start_period: 20s
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+      config-sv:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    restart: on-failure
 
   payment-service:
     build:
@@ -85,17 +157,35 @@ services:
       - microservices-net
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      - config-sv
-      - discovery-service
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - CONFIG_SERVER_URL=config-sv
+      - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -XX:MinRAMPercentage=50.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M # Hard limit (Docker kills it if exceeded)
+        reservations:
+          memory: 256M # Soft limit (Docker tries to guarantee this)
+    env_file:
+      - .env
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8060/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 10
-      depends_on:
-        config-sv:
-          condition: service_healthy
+      start_period: 20s
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+      config-sv:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+    restart: on-failure
 
   product-service:
     build:
@@ -105,17 +195,35 @@ services:
       - microservices-net
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      - config-sv
-      - discovery-service
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - CONFIG_SERVER_URL=config-sv
+      - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -XX:MinRAMPercentage=50.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M # Hard limit (Docker kills it if exceeded)
+        reservations:
+          memory: 256M # Soft limit (Docker tries to guarantee this)
+    env_file:
+      - .env
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8050/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 10
-      depends_on:
-        config-sv:
-          condition: service_healthy
+      start_period: 20s
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      config-sv:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+    restart: on-failure
 
   notification-service:
     build:
@@ -125,17 +233,37 @@ services:
       - microservices-net
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      - config-sv
-      - discovery-service
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - CONFIG_SERVER_URL=config-sv
+      - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -XX:MinRAMPercentage=50.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M # Hard limit (Docker kills it if exceeded)
+        reservations:
+          memory: 256M # Soft limit (Docker tries to guarantee this)
+    env_file:
+      - .env
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8040/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 10
-      depends_on:
-        config-sv:
-          condition: service_healthy
+      start_period: 20s
+    depends_on:
+      mail-dev:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+      config-sv:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    restart: on-failure
 
   gateway-service:
     build:
@@ -145,14 +273,31 @@ services:
       - microservices-net
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - CONFIG_SERVER_URL=config-sv
+      - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -XX:MinRAMPercentage=50.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M # Hard limit (Docker kills it if exceeded)
+        reservations:
+          memory: 256M # Soft limit (Docker tries to guarantee this)
+    env_file:
+      - .env
     ports:
       - 8222:8222
     depends_on:
+      keycloak:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
       config-sv:
         condition: service_healthy
       discovery-service:
         condition: service_healthy
       order-service:
+        condition: service_healthy
+      customer-service:
         condition: service_healthy
       payment-service:
         condition: service_healthy
@@ -160,9 +305,11 @@ services:
         condition: service_healthy
       notification-service:
         condition: service_healthy
+    restart: on-failure
 
 
 
 networks:
   microservices-net:
+    name: microservices-net
     driver: bridge
