@@ -4,10 +4,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 env:
   # GitHub container registry, repository owner resolves to GitHub user mail on its own
