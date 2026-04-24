@@ -17,7 +17,8 @@ bin/
 **/target/
 **/build/
 **/out/
-.mvn/
+#Needed for CI/CD
+#.mvn/
 .gradle/
 *.class
 *.jar
