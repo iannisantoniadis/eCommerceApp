@@ -78,12 +78,11 @@ jobs:
 
 # ── DOCKER JOBS that wait for build ─────────────────────────────
   docker:
-    name: Docker ${{ matrix.service }}
     runs-on: ubuntu-latest
     # Waits for build to finish
     needs: build
     # Job triggers only on pushes on main, on pull requests we need to see only whether it compiles
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     permissions:
       # Contents are actual repo contents - raw code (.java) whereas packages are the artifacts (.jar /.war) used by the VMs (might need further research on this)
       contents: read
