@@ -1,0 +1,135 @@
+name: CI/CD Pipeline
+
+# triggers - do this for push and pull request on main branch
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  # GitHub container registry, repository owner resolves to GitHub user mail on its own
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }
+
+
+# Each job represents one unit of work on its own VM, they run in parallel unless they are co-dependent
+jobs:
+# ── BUILD JOBS in parallel ─────────────────────────────
+  build:
+    # Each service displays its name in the UI
+    name: Build ${{ matrix.service }}
+    # GitHub provides free Ubuntu VMs
+    runs-on: ubuntu-latest
+    # Matrix strategy allows the definition of one job using a matrix of variables which results in multiple parallel similar jobs
+    # 1 job with 8 types of configuration strategy -> 8 parallel jobs
+    strategy:
+      matrix:
+        include:
+          - service: config-sv
+            path: services/config-sv
+          - service: discovery
+            path: services/discovery
+          - service: gateway
+            path: services/gateway
+          - service: customer
+            path: services/customer
+          - service: order
+            path: services/order
+          - service: payment
+            path: services/payment
+          - service: product
+            path: services/product
+          - service: notification
+            path: services/notification
+    # The actual work
+    steps:
+      - name: Checkout code
+        # Uses pre-built action from the GitHub marketplace - this one clones the repo into the VM
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        # Pre-build action to install java on VM
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          # Automatically cache ~/.m2 between runs so dependencies are not re-downloaded with every pipeline run
+          cache: maven
+
+      - name: Build ${{ matrix.service }}
+        # Run the shell command within for each path variable, equivalent of: cd services/customer && ./mvnw clean package in shell
+        working-directory: ${{ matrix.path }}
+        # Shell command
+        run: ./mvnw clean package -DskipTests --no-transfer-progress
+
+      # After the jars are built, they are uploaded to GitHub's temporary artifact storage,
+      # that happens because jobs cannot exchange files directly as they run on separate VMs
+      # => files are passed as artifacts between each other.
+      # They are kept for one day because we only need them for as long as the Docker job need to pick them up
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jar-${{ matrix.service }}
+          path: ${{ matrix.path }}/target/*.jar
+          retention-days: 1
+
+# ── DOCKER JOBS that wait for build ─────────────────────────────
+  docker:
+    name: Docker ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    # Waits for build to finish
+    needs: build
+    # Job triggers only on pushes on main, on pull requests we need to see only whether it compiles
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      # Contents are actual repo contents - raw code (.java) whereas packages are the artifacts (.jar /.war) used by the VMs (might need further research on this)
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - service: config-sv
+            path: services/config-sv
+          - service: discovery
+            path: services/discovery
+          - service: gateway
+            path: services/gateway
+          - service: customer
+            path: services/customer
+          - service: order
+            path: services/order
+          - service: payment
+            path: services/payment
+          - service: product
+            path: services/product
+          - service: notification
+            path: services/notification
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jar-${{ matrix.service }}
+          path: ${{ matrix.path }}/target/
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.service }} image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.path }}
+          file: ${{ matrix.path }}/Dockerfile.ci
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
+            ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
