@@ -132,7 +132,7 @@ jobs:
       - name: Build and push ${{ matrix.service }} image
         run: |
           docker build \
-            -f ${{ matrix.path }}/Dockerfile.ci \
+            -f $GITHUB_WORKSPACE/${{ matrix.path }}/Dockerfile.ci \
             -t ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest \
             -t ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }} \
             ${{ matrix.path }}
