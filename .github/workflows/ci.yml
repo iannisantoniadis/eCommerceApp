@@ -130,11 +130,11 @@ jobs:
         run: ls -la ${{ matrix.path }}/target/
 
       - name: Build and push ${{ matrix.service }} image
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ matrix.path }}
-          file: ${{ matrix.path }}/Dockerfile.ci
-          push: true
-          tags: |
-            ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
-            ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
+        run: |
+          docker build \
+            -f ${{ matrix.path }}/Dockerfile.ci \
+            -t ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest \
+            -t ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }} \
+            ${{ matrix.path }}
+          docker push ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
+          docker push ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
