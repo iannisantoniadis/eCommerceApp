@@ -135,6 +135,6 @@ jobs:
             -f $GITHUB_WORKSPACE/${{ matrix.path }}/Dockerfile.ci \
             -t ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest \
             -t ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }} \
-            ${{ matrix.path }}
+            $GITHUB_WORKSPACE/${{ matrix.path }}
           docker push ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
           docker push ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
