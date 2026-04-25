@@ -126,6 +126,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check build context contents
+        run: ls -la ${{ matrix.path }}/target/
+
       - name: Build and push ${{ matrix.service }} image
         uses: docker/build-push-action@v5
         with:
