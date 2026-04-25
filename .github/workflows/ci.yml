@@ -131,6 +131,7 @@ jobs:
 
       - name: Build and push ${{ matrix.service }} image
         run: |
+          cp $GITHUB_WORKSPACE/${{ matrix.path }}/target/*.jar $GITHUB_WORKSPACE/${{ matrix.path }}/
           docker build \
             -f $GITHUB_WORKSPACE/${{ matrix.path }}/Dockerfile.ci \
             -t ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest \
