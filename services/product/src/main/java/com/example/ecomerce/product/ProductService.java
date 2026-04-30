@@ -22,37 +22,62 @@ public class ProductService {
     }
 
     public List<ProductPurchaseResponse> purchaseProducts(List<ProductPurchaseRequest> requestList) {
-        requestList = requestList.stream().sorted(Comparator.comparingLong(ProductPurchaseRequest::productId)).toList();
-        var productIds = requestList.stream().map(ProductPurchaseRequest::productId).toList();
-        var storedProducts = repository.findAllByIdInOrderById(productIds);
-        //Check whether we have the products ordered by the customer, send error if not, along with ids
-        List<Long> missingIds = productIds.stream()
-                .filter(id -> !storedProducts.stream().map(Product::getId).toList().contains(id))
-                .toList();
-        if (!missingIds.isEmpty()){
-            throw new ProductPurchaseException("One or more products does not exist" + missingIds.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+        // Remove potential duplicates (e.g. : [{id:1, quantity:1}, {id:1, quantity;2}] -> [{id:1, quantity:3}])
+        Map<Long, Double> requestedQuantityById = new LinkedHashMap<>();
+        for (ProductPurchaseRequest req : requestList) {
+            requestedQuantityById.merge(req.productId(), req.quantity(), Double::sum);
         }
-        //Check whether the quantity of stuff ordered by the customer is available for purchase,
-        //if so, subtract it from existing stock, otherwise send ids and quantities available as error.
-        //Corner case: the customer orders the entire quantity in stock for a product -> delete product when quantity reaches 0
+        var productIds = new ArrayList<>(requestedQuantityById.keySet());
+
+        // Getting stored products from DB
+        var storedProducts = repository.findAllByIdInOrderById(productIds);
+
+        // Checking for missing products
+        var storedIds = storedProducts.stream().map(Product::getId).toList();
+        List<Long> missingIds = productIds.stream()
+                .filter(id -> !storedIds.contains(id))
+                .toList();
+        if (!missingIds.isEmpty()) {
+            throw new ProductPurchaseException("One or more products does not exist: " +
+                            missingIds.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+        }
+
+        // Building map for lookup
+        Map<Long, Product> productById = storedProducts.stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+
+        // Checking quantity
         Map<Long, Double> insufficientProducts = new HashMap<>();
-        List<ProductPurchaseResponse> returnList = new ArrayList<>();
-        for (int i = 0; i < requestList.size(); i++) {
-            if (storedProducts.get(i).getAvailableQuantity() < requestList.get(i).quantity()) {
-                insufficientProducts.put(requestList.get(i).productId(), requestList.get(i).quantity());
+        for (var entry : requestedQuantityById.entrySet()) {
+            var product = productById.get(entry.getKey());
+            if (product.getAvailableQuantity() < entry.getValue()) {
+                insufficientProducts.put(entry.getKey(), entry.getValue());
             }
         }
-        if (!insufficientProducts.isEmpty()){
-            throw new ProductPurchaseException("One or more product is in insufficient quantity: " +
-                    insufficientProducts.entrySet().stream().map(es -> es.getKey() + ": " + es.getValue()).toList());
-        }
-        for (int i = 0; i < requestList.size(); i++)  {
-            var difference = storedProducts.get(i).getAvailableQuantity() - requestList.get(i).quantity();
-            returnList.add(mapper.toProductPurchaseResponse(storedProducts.get(i), requestList.get(i)));
-            storedProducts.get(i).setAvailableQuantity(difference);
 
+        if (!insufficientProducts.isEmpty()) {
+            throw new ProductPurchaseException(
+                    "One or more products are in insufficient quantity: " +
+                            insufficientProducts.entrySet().stream()
+                                    .map(es -> es.getKey() + ": " + es.getValue())
+                                    .collect(Collectors.joining(", "))
+            );
         }
-        repository.saveAll(storedProducts);
+
+        // Deduct quantities and build response
+        List<ProductPurchaseResponse> returnList = new ArrayList<>();
+        for (var entry : requestedQuantityById.entrySet()) {
+            var product = productById.get(entry.getKey());
+            var requestedQty = entry.getValue();
+            var difference = product.getAvailableQuantity() - requestedQty;
+            product.setAvailableQuantity(difference);
+
+            // Synthesizing a new request with the identical products grouped by id and quantity summed up
+            var aggregatedRequest = new ProductPurchaseRequest(entry.getKey(), requestedQty);
+            returnList.add(mapper.toProductPurchaseResponse(product, aggregatedRequest));
+        }
+
+        repository.saveAll(new ArrayList<>(productById.values()));
         return returnList;
     }
 
