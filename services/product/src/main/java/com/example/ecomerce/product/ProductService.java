@@ -92,18 +92,28 @@ public class ProductService {
     }
 
     public void restoreProducts(List<ProductPurchaseRequest> requestList) {
-        requestList = requestList.stream().sorted(Comparator.comparingLong(ProductPurchaseRequest::productId)).toList();
+        // Remove potential duplicates (e.g. : [{id:1, quantity:1}, {id:1, quantity;2}] -> [{id:1, quantity:3}])
+        Map<Long, Double> returnedProductsMap = new LinkedHashMap<>();
+        for (ProductPurchaseRequest req : requestList) {
+            returnedProductsMap.merge(req.productId(), req.quantity(), Double::sum);
+        }
 
-        var productsToRestore = repository.findAllByIdInOrderById(requestList.stream().map(ProductPurchaseRequest::productId).toList());
-        if (requestList.size() != productsToRestore.size()){
-            throw new ProductPurchaseException("The following product ids are invalid: "
-                    + requestList.stream()
-                    .filter(req -> !productsToRestore.stream().map(Product::getId).toList().contains(req.productId())).toList());
+        var productIds = new ArrayList<>(returnedProductsMap.keySet());
+
+        // Getting stored products from DB
+        var productsToRestore = repository.findAllByIdInOrderById(productIds).stream().collect(Collectors.toMap(Product::getId, product -> product));
+
+        if (returnedProductsMap.size() != productsToRestore.size()){
+            throw new ProductPurchaseException("The following product ids are invalid: " +
+                    returnedProductsMap.entrySet().stream().filter(item ->
+                            !productsToRestore.values().stream().map(Product::getId).toList()
+                                    .contains(item.getKey())).map(item -> String.valueOf(item.getKey())).collect(Collectors.joining(", ")));
         }
-        for (int i=0; i< productsToRestore.size(); i++){
-            Product product = productsToRestore.get(i);
-            product.setAvailableQuantity(product.getAvailableQuantity() + requestList.get(i).quantity());
+
+        for (Long id : productsToRestore.keySet()){
+            var productToRestore = productsToRestore.get(id);
+            productToRestore.setAvailableQuantity(productToRestore.getAvailableQuantity() + returnedProductsMap.get(id));
         }
-        repository.saveAll(productsToRestore);
-    }
+        repository.saveAll(productsToRestore.values());
+        }
 }
