@@ -63,7 +63,7 @@ jobs:
         # Run the shell command within for each path variable, equivalent of: cd services/customer && ./mvnw clean package in shell
         working-directory: ${{ matrix.path }}
         # Shell command
-        run: ./mvnw clean package -DskipTests --no-transfer-progress
+        run: ./mvnw clean package --no-transfer-progress
 
       # After the jars are built, they are uploaded to GitHub's temporary artifact storage,
       # that happens because jobs cannot exchange files directly as they run on separate VMs
