@@ -2,7 +2,6 @@ package com.example.ecomerce;
 
 import com.example.ecomerce.exception.ProductPurchaseException;
 import com.example.ecomerce.product.*;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,13 +13,12 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
-public class ProductServiceTets {
+public class ProductServiceTest {
 
     @Mock private ProductRepository repository;
     @Mock private ProductMapper mapper;
