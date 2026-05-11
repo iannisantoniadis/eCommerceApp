@@ -45,11 +45,11 @@ public class CustomerController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'VISITOR')")
     @Operation(description = "Endpoint to find all customers, usable by VISITOR")
     @SecurityRequirement(name = "Keycloak-JWT")
-    public ResponseEntity<Page<CustomerResponse>> findAllCustomers(
+    public ResponseEntity<List<CustomerResponse>> findAllCustomers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ){
-        return ResponseEntity.ok(service.findAllCustomers(page, size));
+        return ResponseEntity.ok(service.findAllCustomers(page, size).getContent());
     }
 
     @GetMapping("/exists/{customer-id}")
