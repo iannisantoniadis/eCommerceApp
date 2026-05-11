@@ -3,6 +3,9 @@ package com.example.ecomerce.product;
 import com.example.ecomerce.exception.ProductPurchaseException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -87,8 +90,8 @@ public class ProductService {
                 .orElseThrow(() -> new EntityNotFoundException("Product not found for id: " + productId));
     }
 
-    public List<ProductResponse> findAll() {
-        return repository.findAll().stream().map(mapper::toProductResponse).toList();
+    public Page<ProductResponse> findAll(int page, int size) {
+        return repository.findAll(PageRequest.of(page, size, Sort.by("id"))).map(mapper::toProductResponse);
     }
 
     public void restoreProducts(List<ProductPurchaseRequest> requestList) {
