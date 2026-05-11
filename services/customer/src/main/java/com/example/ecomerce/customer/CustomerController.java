@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +35,7 @@ public class CustomerController {
     @Operation(description = "Endpoint to update an existing customer's data, usable by CUSTOMER")
     @SecurityRequirement(name = "Keycloak-JWT")
     public ResponseEntity<Void> updateCustomer(
-            @RequestBody CustomerRequest request
+            @RequestBody @Valid CustomerRequest request
     ) {
         service.updateCustomer(request);
         return ResponseEntity.accepted().build();
@@ -44,8 +45,11 @@ public class CustomerController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'VISITOR')")
     @Operation(description = "Endpoint to find all customers, usable by VISITOR")
     @SecurityRequirement(name = "Keycloak-JWT")
-    public ResponseEntity<List<CustomerResponse>> findAllCustomers(){
-        return ResponseEntity.ok(service.findAllCustomers());
+    public ResponseEntity<Page<CustomerResponse>> findAllCustomers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ){
+        return ResponseEntity.ok(service.findAllCustomers(page, size));
     }
 
     @GetMapping("/exists/{customer-id}")

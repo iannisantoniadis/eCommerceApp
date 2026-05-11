@@ -8,6 +8,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -165,28 +168,33 @@ public class CustomerServiceTests {
     @DisplayName("findAllCustomers - returns all mapped customers")
     void findAllCustomers_ReturnsMappedList() {
         // GIVEN
+        int page = 0;
+        int size = 10;
         var customer = buildCustomer();
         var response = buildCustomerResponse();
+        Page<Customer> customerPage = new PageImpl<>(List.of(customer));
 
-        when(repository.findAll()).thenReturn(List.of(customer));
+        when(repository.findAll(any(Pageable.class))).thenReturn(customerPage);
         when(mapper.toCustomerResponse(customer)).thenReturn(response);
 
         // WHEN
-        var results = customerService.findAllCustomers();
+        var results = customerService.findAllCustomers(page, size);
 
         // THEN
-        assertEquals(1, results.size());
-        assertEquals(CUSTOMER_ID, results.getFirst().id());
+        assertEquals(1, results.getSize());
+        assertEquals(CUSTOMER_ID, results.getContent().getFirst().id());
     }
 
     @Test
     @DisplayName("findAllCustomers - returns empty list when no customers exist")
     void findAllCustomers_EmptyList() {
         // GIVEN
-        when(repository.findAll()).thenReturn(List.of());
+        int page = 0;
+        int size = 10;
+        when(repository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
 
         // WHEN
-        var results = customerService.findAllCustomers();
+        var results = customerService.findAllCustomers(page, size);
 
         // THEN
         assertNotNull(results);

@@ -2,6 +2,8 @@ package com.example.ecomerce.handler;
 
 import com.example.ecomerce.exception.CustomerBusinessException;
 import jakarta.ws.rs.BadRequestException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -35,5 +37,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new CustomErrorResponse(errors));
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<String> handle(DuplicateKeyException ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("This email is already in use!");
+        //no direct way to extract the key or the field in cause without regex, limitation of the mongoDB driver, this will suffice
     }
 }

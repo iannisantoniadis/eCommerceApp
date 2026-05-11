@@ -2,10 +2,12 @@ package com.example.ecomerce.customer;
 
 import com.example.ecomerce.exception.CustomerBusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -16,9 +18,6 @@ public class CustomerService {
 
     private final CustomerMapper mapper;
     public String createCustomer(CustomerRequest request) {
-        if (repository.findByEmail(request.email()).isPresent()){
-            throw new CustomerBusinessException("This email is already in use: " + request.email());
-        }
         Customer customer = repository.save(mapper.toCustomer(request));
         return customer.getId();
     }
@@ -42,8 +41,8 @@ public class CustomerService {
             customer.setAddress(request.address());
     }
 
-    public List<CustomerResponse> findAllCustomers() {
-        return repository.findAll().stream().map(mapper::toCustomerResponse).toList();
+    public Page<CustomerResponse> findAllCustomers(int page, int size) {
+        return repository.findAll(PageRequest.of(page, size, Sort.by("id"))).map(mapper::toCustomerResponse);
     }
 
     public Optional<Customer> findById(String customerId) {
