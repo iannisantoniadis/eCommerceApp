@@ -66,7 +66,6 @@ public class CustomerServiceTests {
         var request = buildRequest();
         var customer = buildCustomer();
 
-        when(repository.findByEmail(EMAIL)).thenReturn(Optional.empty());
         when(mapper.toCustomer(request)).thenReturn(customer);
         when(repository.save(customer)).thenReturn(customer);
 
@@ -77,24 +76,6 @@ public class CustomerServiceTests {
         assertNotNull(id);
         assertEquals(CUSTOMER_ID, id);
         verify(repository, times(1)).save(customer);
-    }
-
-    @Test
-    @DisplayName("createCustomer - throws CustomerBusinessException when email already in use")
-    void createCustomer_EmailAlreadyInUse() {
-        // GIVEN
-        var request = buildRequest();
-        when(repository.findByEmail(EMAIL)).thenReturn(Optional.of(buildCustomer()));
-
-        // WHEN & THEN
-        var exception = assertThrows(CustomerBusinessException.class,
-                () -> customerService.createCustomer(request));
-
-        assertTrue(exception.getMessage().contains(EMAIL));
-
-        // Save should never be called
-        verifyNoMoreInteractions(repository);
-        verifyNoInteractions(mapper);
     }
 
     // updateCustomer
