@@ -26,6 +26,9 @@ public class Product {
 
     private BigDecimal price;
 
+    @Version
+    private Long version;
+
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;

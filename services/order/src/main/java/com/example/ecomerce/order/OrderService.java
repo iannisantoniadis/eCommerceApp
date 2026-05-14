@@ -2,6 +2,7 @@ package com.example.ecomerce.order;
 
 import com.example.ecomerce.customer.CustomerClientService;
 import com.example.ecomerce.customer.CustomerResponse;
+import com.example.ecomerce.exception.BusinessException;
 import com.example.ecomerce.kafka.OrderConfirmation;
 import com.example.ecomerce.kafka.OrderProducer;
 import com.example.ecomerce.orderLine.OrderLineRequest;
@@ -9,6 +10,7 @@ import com.example.ecomerce.orderLine.OrderLineService;
 import com.example.ecomerce.kafka.payment.PaymentEvent;
 import com.example.ecomerce.payment.PaymentProducer;
 import com.example.ecomerce.product.ProductClient;
+import com.example.ecomerce.product.PurchaseRequest;
 import com.example.ecomerce.product.PurchaseResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +44,17 @@ public class OrderService {
         //Purchase the products --> product microservice
         var purchasedProducts =  productClient.purchaseProductsAsync(request.products());
 
-        CompletableFuture.allOf(customer,purchasedProducts).join();
+        try {
+            CompletableFuture.allOf(customer, purchasedProducts).join();
+        }
+        catch (Exception ex){
+            //products were purchased but the customer was not fetched for some reason
+            if (purchasedProducts.isDone() && customer.isCompletedExceptionally()){
+                productClient.restoreProducts(purchasedProducts.join()
+                        .stream().map(prod -> new PurchaseRequest(prod.productId(), prod.quantity())).toList());
+            }
+            throw new BusinessException("Order creation failed: " + ex.getMessage());
+        }
 
         // results
         CustomerResponse customerResponse = customer.join();
@@ -53,7 +65,7 @@ public class OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         //Persist order
-        var order = repository.save(mapper.toOrder(request, total, OrderStatusEnum.CONFIRMED));
+        var order = repository.save(mapper.toOrder(request, total, OrderStatusEnum.PENDING));
 
         //Persist order lines
         orderLineService.saveOrderLines(purchaseResponseList.stream().map(

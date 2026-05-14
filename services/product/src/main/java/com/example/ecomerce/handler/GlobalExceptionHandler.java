@@ -1,7 +1,9 @@
 package com.example.ecomerce.handler;
 
 import com.example.ecomerce.exception.ProductPurchaseException;
+import com.example.ecomerce.exception.ProductRestoreException;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -24,7 +26,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<String> handle(EntityNotFoundException ex){
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .status(HttpStatus.NOT_FOUND)
                 .body(ex.getMessage());
     }
 
@@ -42,5 +44,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new CustomErrorResponse(errors));
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<String> handle(OptimisticLockingFailureException ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("Resource was modified by another request. Please retry.\n" + System.currentTimeMillis());
+    }
+
+    @ExceptionHandler(ProductRestoreException.class)
+    public ResponseEntity<String> handle(ProductRestoreException ex){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage() + "\n" + System.currentTimeMillis());
     }
 }

@@ -40,6 +40,9 @@ public class Order {
     @OneToMany(mappedBy = "order")
     private List<OrderLine> orderLines;
 
+    @Version
+    private Long version;
+
     //Auditing fields
 
     @CreatedDate

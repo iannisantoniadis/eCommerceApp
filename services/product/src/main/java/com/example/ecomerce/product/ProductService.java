@@ -1,12 +1,17 @@
 package com.example.ecomerce.product;
 
 import com.example.ecomerce.exception.ProductPurchaseException;
+import com.example.ecomerce.exception.ProductRestoreException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,6 +29,12 @@ public class ProductService {
 
     }
 
+    @Transactional
+    @Retryable(
+            retryFor = OptimisticLockingFailureException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100, multiplier = 2.0)
+    )
     public List<ProductPurchaseResponse> purchaseProducts(List<ProductPurchaseRequest> requestList) {
         // Remove potential duplicates (e.g. : [{id:1, quantity:1}, {id:1, quantity;2}] -> [{id:1, quantity:3}])
         Map<Long, Double> requestedQuantityById = new LinkedHashMap<>();
@@ -94,6 +105,12 @@ public class ProductService {
         return repository.findAll(PageRequest.of(page, size, Sort.by("id"))).map(mapper::toProductResponse);
     }
 
+    @Transactional
+    @Retryable(
+            retryFor = OptimisticLockingFailureException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100, multiplier = 2.0)
+    )
     public void restoreProducts(List<ProductPurchaseRequest> requestList) {
         // Remove potential duplicates (e.g. : [{id:1, quantity:1}, {id:1, quantity;2}] -> [{id:1, quantity:3}])
         Map<Long, Double> returnedProductsMap = new LinkedHashMap<>();
@@ -107,7 +124,7 @@ public class ProductService {
         var productsToRestore = repository.findAllByIdInOrderById(productIds).stream().collect(Collectors.toMap(Product::getId, product -> product));
 
         if (returnedProductsMap.size() != productsToRestore.size()){
-            throw new ProductPurchaseException("The following product ids are invalid: " +
+            throw new ProductRestoreException("The following product ids are invalid: " +
                     returnedProductsMap.entrySet().stream().filter(item ->
                             !productsToRestore.values().stream().map(Product::getId).toList()
                                     .contains(item.getKey())).map(item -> String.valueOf(item.getKey())).collect(Collectors.joining(", ")));

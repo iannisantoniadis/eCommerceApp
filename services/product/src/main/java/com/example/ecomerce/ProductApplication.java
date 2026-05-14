@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.retry.annotation.EnableRetry;
 
 @SpringBootApplication
 @OpenAPIDefinition(
@@ -32,6 +33,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 				)
 		)
 )
+@EnableRetry
 public class ProductApplication {
 
 	public static void main(String[] args) {

@@ -2,9 +2,12 @@ package com.example.ecomerce.customer;
 
 import com.example.ecomerce.exception.CustomerBusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -22,6 +25,11 @@ public class CustomerService {
         return customer.getId();
     }
 
+    @Retryable(
+            retryFor = OptimisticLockingFailureException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100, multiplier = 2.0)
+    )
     public void updateCustomer(CustomerRequest request) {
         var customer = repository.findById(request.id()).orElseThrow(() ->
                 new CustomerBusinessException(String.format("No customer found for the provided id: %s", request.id())));
