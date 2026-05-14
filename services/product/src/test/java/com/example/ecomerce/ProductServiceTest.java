@@ -269,7 +269,7 @@ public class ProductServiceTest {
     }
 
     @Test
-    @DisplayName("restoreProducts - throws ProductPurchaseException for invalid product ids")
+    @DisplayName("restoreProducts - throws ProductRestoreException for invalid product ids")
     void restoreProducts_InvalidIds_ThrowsException() {
         // GIVEN
         var requests = List.of(buildPurchaseRequest(999L, 3d));

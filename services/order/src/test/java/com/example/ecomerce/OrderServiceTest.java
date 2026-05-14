@@ -2,6 +2,7 @@ package com.example.ecomerce;
 
 import com.example.ecomerce.customer.CustomerClientService;
 import com.example.ecomerce.customer.CustomerResponse;
+import com.example.ecomerce.exception.BusinessException;
 import com.example.ecomerce.kafka.OrderConfirmation;
 import com.example.ecomerce.kafka.OrderProducer;
 import com.example.ecomerce.kafka.payment.PaymentEvent;
@@ -22,7 +23,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -88,7 +88,7 @@ public class OrderServiceTest {
                 .thenReturn(CompletableFuture.completedFuture(customer));
         when(productClient.purchaseProductsAsync(any()))
                 .thenReturn(CompletableFuture.completedFuture(List.of(purchaseResponse)));
-        when(mapper.toOrder(request, expectedTotal, OrderStatusEnum.CONFIRMED))
+        when(mapper.toOrder(request, expectedTotal, OrderStatusEnum.PENDING))
                 .thenReturn(order);
         when(repository.save(any()))
                 .thenReturn(order);
@@ -100,7 +100,7 @@ public class OrderServiceTest {
         assertEquals(ORDER_ID, orderId);
 
         // Verify order total calculation
-        verify(mapper).toOrder(request, expectedTotal, OrderStatusEnum.CONFIRMED);
+        verify(mapper).toOrder(request, expectedTotal, OrderStatusEnum.PENDING);
 
         // Verify order lines persisted
         verify(orderLineService, times(1)).saveOrderLines(anyList());
@@ -136,7 +136,7 @@ public class OrderServiceTest {
                 .thenReturn(CompletableFuture.completedFuture(buildCustomer()));
         when(productClient.purchaseProductsAsync(any()))
                 .thenReturn(CompletableFuture.completedFuture(purchaseResponses));
-        when(mapper.toOrder(request, expectedTotal, OrderStatusEnum.CONFIRMED))
+        when(mapper.toOrder(request, expectedTotal, OrderStatusEnum.PENDING))
                 .thenReturn(order);
         when(repository.save(any()))
                 .thenReturn(order);
@@ -147,11 +147,11 @@ public class OrderServiceTest {
         // THEN
         assertNotNull(orderId);
         // Verify the total passed to mapper is correct
-        verify(mapper).toOrder(request, expectedTotal, OrderStatusEnum.CONFIRMED);
+        verify(mapper).toOrder(request, expectedTotal, OrderStatusEnum.PENDING);
     }
 
     @Test
-    @DisplayName("createOrder - customer service failure propagates as CompletionException")
+    @DisplayName("createOrder - customer service failure propagates as BusinessException")
     void createOrder_CustomerServiceFails() {
         // GIVEN — customer service throws an exception
         when(customerClient.findCustomerById(CUSTOMER_ID))
@@ -163,7 +163,7 @@ public class OrderServiceTest {
 
         // WHEN & THEN
         // CompletableFuture.allOf().join() wraps exceptions in CompletionException
-        assertThrows(CompletionException.class,
+        assertThrows(BusinessException.class,
                 () -> orderService.createOrder(buildOrderRequest("CREDIT_CARD")));
 
         // Nothing should be persisted or sent
@@ -171,7 +171,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("createOrder - product service failure propagates as CompletionException")
+    @DisplayName("createOrder - product service failure propagates as BusinessException")
     void createOrder_ProductServiceFails() {
         // GIVEN — product service throws (e.g. insufficient stock)
         when(customerClient.findCustomerById(CUSTOMER_ID))
@@ -182,7 +182,7 @@ public class OrderServiceTest {
                 ));
 
         // WHEN & THEN
-        assertThrows(CompletionException.class,
+        assertThrows(BusinessException.class,
                 () -> orderService.createOrder(buildOrderRequest("CREDIT_CARD")));
 
         verifyNoInteractions(repository, orderLineService, orderProducer, paymentProducer);
@@ -245,7 +245,7 @@ public class OrderServiceTest {
         // GIVEN
         var order = buildOrder();
         var expectedResponse = new OrderResponse(ORDER_ID, "REF-001", BigDecimal.TEN,
-                PaymentMethodEnum.CREDIT_CARD, OrderStatusEnum.CONFIRMED, CUSTOMER_ID);
+                PaymentMethodEnum.CREDIT_CARD, OrderStatusEnum.PENDING, CUSTOMER_ID);
 
         when(repository.findById(ORDER_ID)).thenReturn(Optional.of(order));
         when(mapper.toOrderResponse(order)).thenReturn(expectedResponse);
@@ -265,7 +265,7 @@ public class OrderServiceTest {
         // GIVEN
         var order = buildOrder();
         var response = new OrderResponse(ORDER_ID, "REF-001", BigDecimal.TEN,
-                PaymentMethodEnum.CREDIT_CARD, OrderStatusEnum.CONFIRMED, CUSTOMER_ID);
+                PaymentMethodEnum.CREDIT_CARD, OrderStatusEnum.PENDING, CUSTOMER_ID);
 
         when(repository.findAll()).thenReturn(List.of(order));
         when(mapper.toOrderResponse(order)).thenReturn(response);
@@ -275,6 +275,6 @@ public class OrderServiceTest {
 
         // THEN
         assertEquals(1, results.size());
-        assertEquals(ORDER_ID, results.get(0).id());
+        assertEquals(ORDER_ID, results.getFirst().id());
     }
 }
