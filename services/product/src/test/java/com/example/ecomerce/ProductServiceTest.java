@@ -1,6 +1,7 @@
 package com.example.ecomerce;
 
 import com.example.ecomerce.exception.ProductPurchaseException;
+import com.example.ecomerce.exception.ProductRestoreException;
 import com.example.ecomerce.product.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -275,7 +276,7 @@ public class ProductServiceTest {
         when(repository.findAllByIdInOrderById(any())).thenReturn(List.of());
 
         // WHEN & THEN
-        var exception = assertThrows(ProductPurchaseException.class,
+        var exception = assertThrows(ProductRestoreException.class,
                 () -> productService.restoreProducts(requests));
 
         assertTrue(exception.getMessage().contains("999"));
