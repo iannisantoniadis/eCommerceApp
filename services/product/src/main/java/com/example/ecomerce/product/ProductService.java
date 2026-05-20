@@ -4,6 +4,8 @@ import com.example.ecomerce.exception.ProductPurchaseException;
 import com.example.ecomerce.exception.ProductRestoreException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,6 +31,7 @@ public class ProductService {
 
     }
 
+    @CacheEvict(value = "products", allEntries = true)
     @Transactional
     @Retryable(
             retryFor = OptimisticLockingFailureException.class,
@@ -95,6 +98,7 @@ public class ProductService {
         return returnList;
     }
 
+    @Cacheable(value = "products", key = "#productId")
     public ProductResponse findById(Long productId) {
         return repository.findById(productId)
                 .map(mapper::toProductResponse)
@@ -105,6 +109,7 @@ public class ProductService {
         return repository.findAll(PageRequest.of(page, size, Sort.by("id"))).map(mapper::toProductResponse);
     }
 
+    @CacheEvict(value = "products", allEntries = true)
     @Transactional
     @Retryable(
             retryFor = OptimisticLockingFailureException.class,

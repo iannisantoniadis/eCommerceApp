@@ -23,26 +23,32 @@ public class PaymentService {
     private final PaymentFailureProducer paymentFailureProducer;
 
     private final NotificationProducer notificationProducer;
+
     public void createPayment(PaymentEvent request) {
-//        Long paymentId = null;
         try {
-//            paymentId = repository.save(mapper.toPayment(request)).getId();
             repository.save(mapper.toPayment(request));
-            notificationProducer.sendNotification(
-                    new PaymentNotificationRequest(
-                            request.orderReference(),
-                            request.amount(),
-                            request.paymentMethod(),
-                            request.customer().firstname(),
-                            request.customer().lastname(),
-                            request.customer().email())
-            );
-            paymentSuccessProducer.sendPaymentSuccess(new PaymentSuccessEvent(request.orderId(), request.orderReference()));
         } catch (Exception e) {
             log.error("Payment failed for order {}", request.orderId(), e);
             paymentFailureProducer.sendPaymentFailure(
                     new PaymentFailureEvent(request.orderId(), request.orderReference(), e.getMessage()));
+            return; // so it won't send two contrary events for the same order
         }
-//        return paymentId;
+
+        try {
+            notificationProducer.sendNotification(
+                new PaymentNotificationRequest(
+                        request.orderReference(),
+                        request.amount(),
+                        request.paymentMethod(),
+                        request.customer().firstname(),
+                        request.customer().lastname(),
+                        request.customer().email())
+        );
+        }
+        catch (Exception e) {
+            log.error("Payment was successful but the notification failed for order {}", request.orderId(), e);
+        }
+
+        paymentSuccessProducer.sendPaymentSuccess(new PaymentSuccessEvent(request.orderId(), request.orderReference()));
     }
 }

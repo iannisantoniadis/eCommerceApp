@@ -103,6 +103,8 @@ services:
         condition: service_healthy
       zipkin:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       config-sv:
         condition: service_healthy
       discovery-service:
@@ -218,6 +220,8 @@ services:
       config-sv:
         condition: service_healthy
       zipkin:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       postgres:
         condition: service_healthy

@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.retry.annotation.EnableRetry;
 
 @SpringBootApplication
@@ -34,6 +35,7 @@ import org.springframework.retry.annotation.EnableRetry;
 		)
 )
 @EnableRetry
+@EnableCaching
 public class ProductApplication {
 
 	public static void main(String[] args) {

@@ -2,6 +2,8 @@ package com.example.ecomerce.customer;
 
 import com.example.ecomerce.exception.CustomerBusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +27,7 @@ public class CustomerService {
         return customer.getId();
     }
 
+    @CacheEvict(value = "customers", key = "#request.id")
     @Retryable(
             retryFor = OptimisticLockingFailureException.class,
             maxAttempts = 3,
@@ -57,11 +60,13 @@ public class CustomerService {
         return repository.findById(customerId);
     }
 
+    @Cacheable(value = "customers", key = "#customerId")
     public CustomerResponse findByIdResponse(String customerId){
         return mapper.toCustomerResponse(findById(customerId).orElseThrow(() ->
                 new CustomerBusinessException(String.format("No customer found for the provided id: %s", customerId))));
     }
 
+    @CacheEvict(value = "customers", key = "#customerId")
     public void deleteById(String customerId) {
         repository.deleteById(customerId);
     }

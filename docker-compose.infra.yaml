@@ -180,6 +180,37 @@ services:
     networks:
       - microservices-net
 
+  redis:
+    container_name: ms_redis
+    image: redis:7.2-alpine
+    ports:
+      - 6379:6379
+    volumes:
+      - redis:/data
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+    # enables persistence - the cache survives restarts, alpine makes it lightweight
+
+  redis-commander:
+    container_name: ms_redis_commander
+    image: rediscommander/redis-commander
+    ports:
+      - 8085:8081
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    networks:
+      - microservices-net
+    depends_on:
+      - redis
+    restart: unless-stopped
+
 networks:
   microservices-net:
     name: microservices-net
@@ -191,5 +222,6 @@ volumes:
   mongo:
   kafka:
   keycloak:
+  redis:
 
 # docker-compose -f docker-compose.infra.yml up -d pt a-l rula doar pe acesta
