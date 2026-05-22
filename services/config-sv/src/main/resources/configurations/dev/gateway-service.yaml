@@ -56,7 +56,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: "gateway,health"
+        include: "gateway,health,prometheus,metrics,info"
   endpoint:
     gateway:
       access: read_only

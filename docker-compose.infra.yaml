@@ -181,7 +181,7 @@ services:
       - microservices-net
 
   redis:
-    container_name: ms_redis
+    container_name: redis
     image: redis:7.2-alpine
     ports:
       - 6379:6379
@@ -199,7 +199,7 @@ services:
     # enables persistence - the cache survives restarts, alpine makes it lightweight
 
   redis-commander:
-    container_name: ms_redis_commander
+    container_name: redis_commander
     image: rediscommander/redis-commander
     ports:
       - 8085:8081
@@ -210,6 +210,45 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+#      PICK EITHER DEV OR DOCKER MODE, AS TARGETS POINT TO EITHER LOCALHOST OR CONTAINER NAME
+#      DEV MODE
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+#      DOCKER MODE
+#      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus:/prometheus
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_healthy
 
 networks:
   microservices-net:
@@ -223,5 +262,7 @@ volumes:
   kafka:
   keycloak:
   redis:
+  prometheus:
+  grafana:
 
 # docker-compose -f docker-compose.infra.yml up -d pt a-l rula doar pe acesta
