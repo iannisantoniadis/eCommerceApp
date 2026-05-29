@@ -16,6 +16,9 @@ spring:
       ddl-auto: create
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        default_batch_size: 30
   kafka:
     bootstrap-servers: kafka:29092
     template:

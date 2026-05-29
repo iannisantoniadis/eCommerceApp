@@ -35,7 +35,6 @@ import org.springframework.retry.annotation.EnableRetry;
 		)
 )
 @EnableRetry
-@EnableCaching
 public class ProductApplication {
 
 	public static void main(String[] args) {

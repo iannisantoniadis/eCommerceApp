@@ -1,7 +1,7 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
-
+# to get to localhost we go to host.docker.internal which resolves to localhost, otherwise Prometheus container cannot resolve to host ip
 scrape_configs:
   - job_name: 'customer-service'
     metrics_path: '/actuator/prometheus'

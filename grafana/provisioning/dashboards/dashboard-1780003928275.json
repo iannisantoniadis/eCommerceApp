@@ -4,19 +4,21 @@
   "metadata": {
     "name": "adtlddg",
     "namespace": "default",
-    "uid": "50ba1426-2319-4baa-a2dc-b16a6f2c697f",
-    "resourceVersion": "1779387514011016",
-    "generation": 15,
-    "creationTimestamp": "2026-05-21T16:23:09Z",
+    "uid": "36a62655-c597-4d15-a718-bc8d45de0b36",
+    "resourceVersion": "1780003817778995",
+    "generation": 1,
+    "creationTimestamp": "2026-05-28T21:30:17Z",
     "labels": {
-      "grafana.app/deprecatedInternalID": "3854504299167744"
+      "grafana.app/deprecatedInternalID": "1966413665910784"
     },
     "annotations": {
-      "grafana.app/createdBy": "user:afmoat6qgy3uof",
-      "grafana.app/folder": "",
-      "grafana.app/saved-from-ui": "Grafana v13.0.1+security-01 (9bbe672d)",
-      "grafana.app/updatedBy": "user:afmoat6qgy3uof",
-      "grafana.app/updatedTimestamp": "2026-05-21T18:18:34Z"
+      "grafana.app/createdBy": "access-policy:service",
+      "grafana.app/managedBy": "classic-file-provisioning",
+      "grafana.app/managerId": "default",
+      "grafana.app/sourceChecksum": "ee06239094846f661f56b2dadf82d40b",
+      "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/dashboard-1779387743005.json",
+      "grafana.app/sourceTimestamp": "1780003765000",
+      "grafana.app/folder": ""
     }
   },
   "spec": {

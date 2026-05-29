@@ -217,12 +217,13 @@ services:
     ports:
       - 9090:9090
     volumes:
-#      PICK EITHER DEV OR DOCKER MODE, AS TARGETS POINT TO EITHER LOCALHOST OR CONTAINER NAME
+#      PICK EITHER DEV OR DOCKER MODE, AS TARGETS POINT TO EITHER LOCALHOST (host.docker.internal) OR CONTAINER NAME
 #      DEV MODE
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+#      - ./prometheus/prometheus_dev.yml:/etc/prometheus/prometheus.yml
 #      DOCKER MODE
-#      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus_docker.yml:/etc/prometheus/prometheus.yml
       - prometheus:/prometheus
+
     networks:
       - microservices-net
     restart: unless-stopped

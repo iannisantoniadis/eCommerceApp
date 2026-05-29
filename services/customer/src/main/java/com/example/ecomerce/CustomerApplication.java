@@ -37,7 +37,6 @@ import org.springframework.retry.annotation.EnableRetry;
 )
 @EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 @EnableRetry
-@EnableCaching
 public class CustomerApplication {
 
 	public static void main(String[] args) {

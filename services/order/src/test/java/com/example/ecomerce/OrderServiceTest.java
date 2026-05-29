@@ -18,6 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -267,11 +270,14 @@ public class OrderServiceTest {
         var response = new OrderResponse(ORDER_ID, "REF-001", BigDecimal.TEN,
                 PaymentMethodEnum.CREDIT_CARD, OrderStatusEnum.PENDING, CUSTOMER_ID);
 
-        when(repository.findAll()).thenReturn(List.of(order));
+        int page = 1;
+        int size = 20;
+        var orderPage = new PageImpl<>(List.of(order));
+        when(repository.findAll(PageRequest.of(page, size, Sort.by("id")))).thenReturn(orderPage);
         when(mapper.toOrderResponse(order)).thenReturn(response);
 
         // WHEN
-        var results = orderService.findAll();
+        var results = orderService.findAll(page, size);
 
         // THEN
         assertEquals(1, results.size());

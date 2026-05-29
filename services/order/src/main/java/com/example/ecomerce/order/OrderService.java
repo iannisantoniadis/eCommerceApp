@@ -14,6 +14,8 @@ import com.example.ecomerce.product.PurchaseRequest;
 import com.example.ecomerce.product.PurchaseResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -108,8 +110,8 @@ public class OrderService {
         return order.getId();
     }
 
-    public List<OrderResponse> findAll() {
-        return repository.findAll().stream().map(mapper::toOrderResponse).toList();
+    public List<OrderResponse> findAll(int page, int size) {
+        return repository.findAll(PageRequest.of(page, size, Sort.by("id"))).stream().map(mapper::toOrderResponse).toList();
     }
 
     public OrderResponse findById(Long orderId) {
