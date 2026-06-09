@@ -14,6 +14,7 @@ public class OrderLineMapper {
                 .order(
                         Order.builder()
                         .id(orderLineRequest.orderId())
+                        .version(0L)
                         .build()
                 )
                 .productId(orderLineRequest.productId())
