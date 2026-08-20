@@ -18,6 +18,8 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   kafka:
     bootstrap-servers: localhost:9092
+    listener:
+      ack-mode: manual_immediate
     template:
 #      default-topic: payment-topic
       order-topic: order-topic
@@ -31,6 +33,8 @@ spring:
       properties:
         spring.json.type.mapping: paymentEvent:com.example.ecomerce.kafka.payment.PaymentEvent
     consumer:
+      # in order for Kafka to not commit an offset before the transactional write to DB of the requests finishes
+      enable-auto-commit: false
 #      group-id: orderGroup
       auto-offset-reset: earliest
       bootstrap-servers: localhost:9092

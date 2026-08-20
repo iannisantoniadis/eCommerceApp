@@ -26,6 +26,7 @@ public class PaymentSuccessProducer {
         Message<PaymentSuccessEvent> message = MessageBuilder
                 .withPayload(request)
                 .setHeader(KafkaHeaders.TOPIC, topic)
+                .setHeader(KafkaHeaders.KEY, request.orderId().toString())
                 .build();
 
         template.send(message);

@@ -3,15 +3,11 @@ package com.example.ecomerce.order;
 import com.example.ecomerce.customer.CustomerClientService;
 import com.example.ecomerce.customer.CustomerResponse;
 import com.example.ecomerce.exception.BusinessException;
-import com.example.ecomerce.kafka.OrderConfirmation;
-import com.example.ecomerce.kafka.OrderProducer;
-import com.example.ecomerce.orderLine.OrderLineRequest;
-import com.example.ecomerce.orderLine.OrderLineService;
-import com.example.ecomerce.kafka.payment.PaymentEvent;
-import com.example.ecomerce.payment.PaymentProducer;
 import com.example.ecomerce.product.ProductClient;
 import com.example.ecomerce.product.PurchaseRequest;
 import com.example.ecomerce.product.PurchaseResponse;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -21,12 +17,17 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
 
+    private final CircuitBreakerRegistry circuitBreakerRegistry;
+
     private final OrderRepository repository;
+
+    private final OrderServiceTransactional orderServiceTransactional;
 
     private final OrderMapper mapper;
 
@@ -34,81 +35,48 @@ public class OrderService {
 
     private final ProductClient productClient;
 
-    private final OrderLineService orderLineService;
+    private CircuitBreaker customerCB() {
+        return circuitBreakerRegistry.circuitBreaker("customerService");
+    }
 
-    private final OrderProducer orderProducer;
-
-    private final PaymentProducer paymentProducer;
+    private CircuitBreaker productCB() {
+        return circuitBreakerRegistry.circuitBreaker("productService");
+    }
 
     public Long createOrder(OrderRequest request) {
         //Check customer --> OpenFeign
-        var customer = customerClient.findCustomerById(request.customerId());
+        Supplier<CompletableFuture<CustomerResponse>> customerSupplier =
+                CircuitBreaker.decorateSupplier(customerCB(), () -> customerClient.findCustomerById(request.customerId()));
         //Purchase the products --> product microservice
-        var purchasedProducts =  productClient.purchaseProductsAsync(request.products());
+        Supplier<CompletableFuture<List<PurchaseResponse>>> productSupplier =
+                CircuitBreaker.decorateSupplier(productCB(), () -> productClient.purchaseProductsAsync(request.products()));
+
+        CompletableFuture<CustomerResponse> customerFuture = customerSupplier.get();
+        CompletableFuture<List<PurchaseResponse>> productFuture = productSupplier.get();
 
         try {
-            CompletableFuture.allOf(customer, purchasedProducts).join();
+            CompletableFuture.allOf(customerFuture, productFuture).join();
         }
         catch (Exception ex){
             //products were purchased but the customer was not fetched for some reason
-            if (purchasedProducts.isDone() && customer.isCompletedExceptionally()){
-                productClient.restoreProducts(purchasedProducts.join()
+            if (productFuture.isDone() && customerFuture.isCompletedExceptionally()){
+                productClient.restoreProducts(productFuture.join()
                         .stream().map(prod -> new PurchaseRequest(prod.productId(), prod.quantity())).toList());
             }
             throw new BusinessException("Order creation failed: " + ex.getMessage());
         }
 
         // results
-        CustomerResponse customerResponse = customer.join();
-        List<PurchaseResponse> purchaseResponseList = purchasedProducts.join();
+        CustomerResponse customerResponse = customerFuture.join();
+        List<PurchaseResponse> purchaseResponseList = productFuture.join();
 
         BigDecimal total = purchaseResponseList.stream()
                 .map(prod -> prod.price().multiply(BigDecimal.valueOf(prod.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        //Persist order
-        var order = repository.save(mapper.toOrder(request, total, OrderStatusEnum.PENDING));
-
-        //Persist order lines
-        orderLineService.saveOrderLines(purchaseResponseList.stream().map(
-                prod -> new OrderLineRequest(
-                        null,
-                        prod.price(),
-                        order.getId(),
-                        prod.productId(),
-                        prod.quantity()
-                )).toList());
-
-        //Start payment process
-        PaymentMethodEnum paymentMethod = PaymentMethodEnum.valueOf(request.paymentMethod());
-
-        var paymentEvent = new PaymentEvent(
-                total,
-                paymentMethod,
-                order.getId(),
-                order.getReference(),
-                customerResponse
-        );
-
-        // nefolosit downstream
-//        paymentClient.requestOrderPayment(paymentRequest).join();
-        // ORDER SERV --(PaymentRequest) kafka_topic:
-        paymentProducer.sendPayment(paymentEvent);
-
-
-        //Send the order confirmation to notification microservice (kafka)
-
-        orderProducer.sendOrderConfirmation(
-                new OrderConfirmation(
-                        request.reference(),
-                        total,
-                        paymentMethod,
-                        customerResponse,
-                        purchaseResponseList
-                )
-        );
-        return order.getId();
+        return orderServiceTransactional.persistOrderAndEnqueueEvents(request, total, customerResponse, purchaseResponseList);
     }
+
 
     public List<OrderResponse> findAll(int page, int size) {
         return repository.findAll(PageRequest.of(page, size, Sort.by("id"))).stream().map(mapper::toOrderResponse).toList();

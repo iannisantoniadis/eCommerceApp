@@ -16,7 +16,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "payment")
+@Table(name = "payment", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_payment_orderId", columnNames = "orderId")
+})
 public class Payment {
 
     @Id
@@ -28,6 +30,7 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     private PaymentMethodEnum paymentMethod;
 
+    @Column(unique = true)
     private Long orderId;
 
     //Auditing fields

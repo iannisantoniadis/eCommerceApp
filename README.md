@@ -69,4 +69,5 @@ Simple application that meets the various requirements of an online commerce pla
 * Make security filter chains extract client roles instead of realm roles
 * ~~Add Swagger~~
 * ~~Fully Dockerize the app~~
+* Complete the Saga pattern via Transactional Outboxing on producer side and Idempotence on both sides
 * Code cleanup

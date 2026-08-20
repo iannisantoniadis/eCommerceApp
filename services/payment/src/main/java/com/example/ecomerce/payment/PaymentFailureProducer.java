@@ -26,6 +26,7 @@ public class PaymentFailureProducer {
         Message<PaymentFailureEvent> message = MessageBuilder
                 .withPayload(request)
                 .setHeader(KafkaHeaders.TOPIC, topic)
+                .setHeader(KafkaHeaders.KEY, request.orderId().toString())
                 .build();
 
         template.send(message);

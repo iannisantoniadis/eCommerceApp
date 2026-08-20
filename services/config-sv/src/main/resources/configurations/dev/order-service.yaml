@@ -13,7 +13,7 @@ spring:
       pool-name: HikariPool-${spring.application.name}
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
@@ -21,6 +21,8 @@ spring:
         default_batch_size: 30
   kafka:
     bootstrap-servers: localhost:9092
+    listener:
+      ack-mode: manual_immediate
     template:
 #      default-topic: order-topic
       order-topic: order-topic
@@ -34,6 +36,7 @@ spring:
       properties:
         spring.json.type.mapping: orderConfirmation:com.example.ecomerce.kafka.OrderConfirmation
     consumer:
+      enable-auto-commit: false
 #      group-id: orderGroup
       auto-offset-reset: earliest
       bootstrap-servers: localhost:9092
@@ -51,6 +54,28 @@ spring:
   threads:
     virtual:
       enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      customerService:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50          # open after 50% failures
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+      productService:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
 
 server:
   port: 8070

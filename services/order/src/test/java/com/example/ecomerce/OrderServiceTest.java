@@ -3,15 +3,16 @@ package com.example.ecomerce;
 import com.example.ecomerce.customer.CustomerClientService;
 import com.example.ecomerce.customer.CustomerResponse;
 import com.example.ecomerce.exception.BusinessException;
-import com.example.ecomerce.kafka.OrderConfirmation;
 import com.example.ecomerce.kafka.OrderProducer;
-import com.example.ecomerce.kafka.payment.PaymentEvent;
 import com.example.ecomerce.order.*;
 import com.example.ecomerce.orderLine.OrderLineService;
 import com.example.ecomerce.payment.PaymentProducer;
 import com.example.ecomerce.product.ProductClient;
 import com.example.ecomerce.product.PurchaseRequest;
 import com.example.ecomerce.product.PurchaseResponse;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,9 +39,11 @@ public class OrderServiceTest {
     @Mock private ProductClient productClient;
     @Mock private OrderRepository repository;
     @Mock private OrderMapper mapper;
-    @Mock private OrderLineService orderLineService;
-    @Mock private OrderProducer orderProducer;
-    @Mock private PaymentProducer paymentProducer;
+//    @Mock private OrderLineService orderLineService;
+//    @Mock private OrderProducer orderProducer;
+//    @Mock private PaymentProducer paymentProducer;
+    @Mock private CircuitBreakerRegistry circuitBreakerRegistry;
+    @Mock private OrderServiceTransactional orderServiceTransactional;
 
     @InjectMocks
     private OrderService orderService;
@@ -76,6 +79,15 @@ public class OrderServiceTest {
         return order;
     }
 
+    @BeforeEach
+    void setUp() {
+        // Real CB instances in their default - closed state - decoration logic works but delegates straight to the supplier
+        lenient().when(circuitBreakerRegistry.circuitBreaker("customerService"))
+                .thenReturn(CircuitBreaker.ofDefaults("customerService"));
+        lenient().when(circuitBreakerRegistry.circuitBreaker("productService"))
+                .thenReturn(CircuitBreaker.ofDefaults("productService"));
+    }
+
     @Test
     @DisplayName("createOrder - success: returns order id, saves order lines, sends kafka events")
     void createOrder_Success(){
@@ -83,7 +95,7 @@ public class OrderServiceTest {
         var request = buildOrderRequest("CREDIT_CARD");
         var customer = buildCustomer();
         var purchaseResponse = buildPurchaseResponse();
-        var order = buildOrder();
+//        var order = buildOrder();
         var expectedTotal = UNIT_PRICE.multiply(BigDecimal.valueOf(QUANTITY)); // 100 * 1 = 100
 
         //WHEN
@@ -91,10 +103,8 @@ public class OrderServiceTest {
                 .thenReturn(CompletableFuture.completedFuture(customer));
         when(productClient.purchaseProductsAsync(any()))
                 .thenReturn(CompletableFuture.completedFuture(List.of(purchaseResponse)));
-        when(mapper.toOrder(request, expectedTotal, OrderStatusEnum.PENDING))
-                .thenReturn(order);
-        when(repository.save(any()))
-                .thenReturn(order);
+        when(orderServiceTransactional.persistOrderAndEnqueueEvents(eq(request), eq(expectedTotal), eq(customer),
+                eq(List.of(purchaseResponse)))).thenReturn(ORDER_ID);
 
         Long orderId = orderService.createOrder(request);
 
@@ -102,15 +112,16 @@ public class OrderServiceTest {
         assertNotNull(orderId);
         assertEquals(ORDER_ID, orderId);
 
-        // Verify order total calculation
-        verify(mapper).toOrder(request, expectedTotal, OrderStatusEnum.PENDING);
+        //verify CB-suppliers were not bypassed
+        verify(customerClient).findCustomerById(CUSTOMER_ID);
+        verify(productClient).purchaseProductsAsync(request.products());
 
-        // Verify order lines persisted
-        verify(orderLineService, times(1)).saveOrderLines(anyList());
+        //verify handover to the transactional method
+        verify(orderServiceTransactional).persistOrderAndEnqueueEvents(
+                request, expectedTotal, customer, List.of(purchaseResponse));
 
-        // Verify both kafka events fired
-        verify(paymentProducer, times(1)).sendPayment(any(PaymentEvent.class));
-        verify(orderProducer, times(1)).sendOrderConfirmation(any(OrderConfirmation.class));
+        //verify the method does not touch the repository
+        verifyNoInteractions(repository);
     }
 
     @Test
@@ -133,24 +144,21 @@ public class OrderServiceTest {
         );
 
         var expectedTotal = new BigDecimal("350.0"); // 100*2 + 50*3
-        var order = buildOrder();
 
         when(customerClient.findCustomerById(CUSTOMER_ID))
                 .thenReturn(CompletableFuture.completedFuture(buildCustomer()));
         when(productClient.purchaseProductsAsync(any()))
                 .thenReturn(CompletableFuture.completedFuture(purchaseResponses));
-        when(mapper.toOrder(request, expectedTotal, OrderStatusEnum.PENDING))
-                .thenReturn(order);
-        when(repository.save(any()))
-                .thenReturn(order);
+        when(orderServiceTransactional.persistOrderAndEnqueueEvents(eq(request), eq(expectedTotal), any(), eq(purchaseResponses)))
+                .thenReturn(ORDER_ID);
 
         // WHEN
         Long orderId = orderService.createOrder(request);
 
         // THEN
-        assertNotNull(orderId);
-        // Verify the total passed to mapper is correct
-        verify(mapper).toOrder(request, expectedTotal, OrderStatusEnum.PENDING);
+        assertEquals(ORDER_ID, orderId);
+        // Verify that the total is correct
+        verify(orderServiceTransactional).persistOrderAndEnqueueEvents(eq(request), eq(expectedTotal), any(), eq(purchaseResponses));
     }
 
     @Test
@@ -170,7 +178,7 @@ public class OrderServiceTest {
                 () -> orderService.createOrder(buildOrderRequest("CREDIT_CARD")));
 
         // Nothing should be persisted or sent
-        verifyNoInteractions(repository, orderLineService, orderProducer, paymentProducer);
+        verifyNoInteractions(repository, orderServiceTransactional);
     }
 
     @Test
@@ -188,58 +196,7 @@ public class OrderServiceTest {
         assertThrows(BusinessException.class,
                 () -> orderService.createOrder(buildOrderRequest("CREDIT_CARD")));
 
-        verifyNoInteractions(repository, orderLineService, orderProducer, paymentProducer);
-    }
-
-    @Test
-    @DisplayName("createOrder - order lines are built correctly from purchase responses")
-    void createOrder_OrderLinesBuiltCorrectly() {
-        // GIVEN
-        var request = buildOrderRequest("CREDIT_CARD");
-        var purchaseResponse = buildPurchaseResponse();
-        var order = buildOrder();
-
-        when(customerClient.findCustomerById(CUSTOMER_ID))
-                .thenReturn(CompletableFuture.completedFuture(buildCustomer()));
-        when(productClient.purchaseProductsAsync(any()))
-                .thenReturn(CompletableFuture.completedFuture(List.of(purchaseResponse)));
-        when(mapper.toOrder(any(), any(), any()))
-                .thenReturn(order);
-        when(repository.save(any()))
-                .thenReturn(order);
-
-        // WHEN
-        orderService.createOrder(request);
-
-        // THEN — capture and verify the order lines passed to the service
-        verify(orderLineService).saveOrderLines(argThat(lines -> {
-            assertEquals(1, lines.size());
-            var line = lines.getFirst();
-            assertEquals(ORDER_ID, line.orderId());
-            assertEquals(PRODUCT_ID, line.productId());
-            assertEquals(UNIT_PRICE, line.unitPrice());
-            assertEquals(QUANTITY, line.quantity());
-            return true;
-        }));
-    }
-
-    @Test
-    @DisplayName("createOrder - invalid payment method throws IllegalArgumentException at service layer")
-    void createOrder_InvalidPaymentMethod() {
-        when(customerClient.findCustomerById(CUSTOMER_ID))
-                .thenReturn(CompletableFuture.completedFuture(buildCustomer()));
-        when(productClient.purchaseProductsAsync(any()))
-                .thenReturn(CompletableFuture.completedFuture(List.of(buildPurchaseResponse())));
-        when(mapper.toOrder(any(), any(), any()))
-                .thenReturn(buildOrder());
-        when(repository.save(any()))
-                .thenReturn(buildOrder());
-
-        assertThrows(IllegalArgumentException.class,
-                () -> orderService.createOrder(buildOrderRequest("INVALID_METHOD")));
-
-        verify(repository, times(1)).save(any());
-        verifyNoInteractions(paymentProducer, orderProducer);
+        verifyNoInteractions(repository, orderServiceTransactional);
     }
 
     @Test

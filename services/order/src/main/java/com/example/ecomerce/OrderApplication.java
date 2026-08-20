@@ -13,11 +13,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableFeignClients
 @EnableAsync
 @EnableJpaAuditing
+@EnableScheduling
 @OpenAPIDefinition(
 		info = @Info(title = "Order Service API", version = "1.0"),
 		servers = @Server(url = "${app.gateway-url}", description = "API Gateway"))

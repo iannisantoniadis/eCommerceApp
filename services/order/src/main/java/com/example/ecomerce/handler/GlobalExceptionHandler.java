@@ -1,6 +1,7 @@
 package com.example.ecomerce.handler;
 
 import com.example.ecomerce.exception.BusinessException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.ws.rs.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
@@ -61,5 +62,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body("Order status was modified by another process. Please retry.");
+    }
+
+    @ExceptionHandler(CallNotPermittedException.class)
+    public ResponseEntity<String> handle(CallNotPermittedException ex) {
+        log.error("Downstream service unavailable, circuit breaker flipped: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("Service temporarily unavailable, please retry shortly");
     }
 }
