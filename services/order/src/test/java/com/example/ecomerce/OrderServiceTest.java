@@ -39,9 +39,6 @@ public class OrderServiceTest {
     @Mock private ProductClient productClient;
     @Mock private OrderRepository repository;
     @Mock private OrderMapper mapper;
-//    @Mock private OrderLineService orderLineService;
-//    @Mock private OrderProducer orderProducer;
-//    @Mock private PaymentProducer paymentProducer;
     @Mock private CircuitBreakerRegistry circuitBreakerRegistry;
     @Mock private OrderServiceTransactional orderServiceTransactional;
 
