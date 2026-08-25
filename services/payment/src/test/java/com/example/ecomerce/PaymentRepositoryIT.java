@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -55,6 +56,10 @@ public class PaymentRepositoryIT {
     @Autowired
     private PaymentRepository repository;
 
+    @Autowired
+    private TestEntityManager entityManager;
+
+
     private Payment buildPayment(Long orderId) {
         return Payment.builder()
                 .amount(new BigDecimal("100.00"))
@@ -78,7 +83,7 @@ public class PaymentRepositoryIT {
     @DisplayName("saveAndFlush - duplicate id save throws Exception")
     void saveAndFlush_duplicateId() {
         var id = 200L;
-        repository.saveAndFlush(buildPayment(id));
+        entityManager.persistAndFlush(buildPayment(id));
 
         assertThrows(DataIntegrityViolationException.class,
                 () -> repository.saveAndFlush(buildPayment(id)));

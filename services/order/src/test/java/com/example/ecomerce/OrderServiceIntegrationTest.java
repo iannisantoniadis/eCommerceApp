@@ -214,4 +214,33 @@ public class OrderServiceIntegrationTest {
         assertEquals("customer-123", response.customerId());
 
     }
+
+    @Test
+    @DisplayName("save - correctly increments version on update")
+    void save_incrementVersionOnUpdate() {
+        // GIVEN
+        var order = entityManager.persistAndFlush(buildOrder("REF123"));
+        assertEquals(0L, order.getVersion());
+
+        // WHEN
+        order.setStatus(OrderStatusEnum.COMPLETED);
+        var updated = orderRepository.save(order);
+        entityManager.flush();
+
+        // THEN
+        assertEquals(1L, updated.getVersion());
+    }
+
+    @Test
+    @DisplayName("updateOrderStatus (bulk @Modifying query) - does NOT increment version, unlike save()")
+    void updateOrderStatus_BulkUpdate_VersionBehavior() {
+        var order = entityManager.persistAndFlush(buildOrder("REF123"));
+
+        orderRepository.updateOrderStatus(order.getId(), OrderStatusEnum.COMPLETED);
+        entityManager.clear(); // forces a fresh read from DB, bypassing the stale in-memory entity
+
+        var reloaded = orderRepository.findById(order.getId()).orElseThrow();
+        assertEquals(OrderStatusEnum.COMPLETED, reloaded.getStatus());
+        assertEquals(0L, reloaded.getVersion()); // confirms bulk update bypassed optimistic locking
+    }
 }
