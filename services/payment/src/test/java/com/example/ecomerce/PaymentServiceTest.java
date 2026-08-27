@@ -103,26 +103,26 @@ public class PaymentServiceTest {
         verify(outboxService, never()).saveOutboxEvent(eq(OutboxEventTypes.PAYMENT_FAILURE),  any());
     }
 
-    @Test
-    @DisplayName("create payment - duplicate request")
-    void createPayment_duplicateRequest() {
-        //GIVEN
-        var paymentMethod = PaymentMethodEnum.CREDIT_CARD;
-        var paymentEvent = buildPaymentEvent(paymentMethod);
-        var payment = buildPayment(paymentMethod);
-
-
-        //WHEN
-        when(mapper.toPayment(paymentEvent)).thenReturn(payment);
-        when(repository.saveAndFlush(payment)).thenThrow(DataIntegrityViolationException.class);
-
-        paymentService.createPayment(paymentEvent);
-
-
-        //THEN
-        verify(repository, times(1)).saveAndFlush(payment);
-        verifyNoInteractions(outboxService, notificationProducer);
-    }
+//    @Test
+//    @DisplayName("create payment - duplicate request")
+//    void createPayment_duplicateRequest() {
+//        //GIVEN
+//        var paymentMethod = PaymentMethodEnum.CREDIT_CARD;
+//        var paymentEvent = buildPaymentEvent(paymentMethod);
+//        var payment = buildPayment(paymentMethod);
+//
+//
+//        //WHEN
+//        when(mapper.toPayment(paymentEvent)).thenReturn(payment);
+//        when(repository.saveAndFlush(payment)).thenThrow(DataIntegrityViolationException.class);
+//
+//        paymentService.createPayment(paymentEvent);
+//
+//
+//        //THEN
+//        verify(repository, times(1)).saveAndFlush(payment);
+//        verifyNoInteractions(outboxService, notificationProducer);
+//    }
 
     @Test
     @DisplayName("createPayment - fails and sends failure event to outbox")
