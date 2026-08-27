@@ -28,11 +28,11 @@ spring:
     listener:
       ack-mode: manual_immediate
     template:
-#      default-topic: payment-topic
       order-topic: order-topic
       payment-topic: payment-topic
       payment-success-topic: payment-success-topic
       payment-failure-topic: payment-failure-topic
+      payment-notification-topic: payment-notification-topic
     producer:
       bootstrap-servers: localhost:9092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

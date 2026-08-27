@@ -23,26 +23,16 @@ spring:
     baseline-version: 1
     user: ${spring.datasource.username}
     password: ${spring.datasource.password}
-#  kafka:
-#    template:
-#      order-topic: order-topic
-#      payment-topic: payment-topic
-#    producer:
-#      bootstrap-servers: kafka:9092
-#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-#      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-#      properties:
-#        spring.json.type.mapping: paymentEvent:com.example.ecomerce.payment.PaymentEvent
   kafka:
     bootstrap-servers: kafka:29092
     listener:
       ack-mode: manual_immediate
     template:
-      #      default-topic: payment-topic
       order-topic: order-topic
       payment-topic: payment-topic
       payment-success-topic: payment-success-topic
       payment-failure-topic: payment-failure-topic
+      payment-notification-topic: payment-notification-topic
     producer:
       bootstrap-servers: kafka:29092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

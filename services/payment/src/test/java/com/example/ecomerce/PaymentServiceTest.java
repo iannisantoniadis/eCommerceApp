@@ -4,7 +4,6 @@ import com.example.ecomerce.kafka.payment.PaymentEvent;
 import com.example.ecomerce.kafka.payment.PaymentFailureEvent;
 import com.example.ecomerce.kafka.payment.PaymentSuccessEvent;
 import com.example.ecomerce.notification.NotificationProducer;
-import com.example.ecomerce.notification.PaymentNotificationRequest;
 import com.example.ecomerce.outbox.OutboxEventTypes;
 import com.example.ecomerce.outbox.OutboxService;
 import com.example.ecomerce.payment.*;
@@ -100,7 +99,7 @@ public class PaymentServiceTest {
         assertEquals(ORDER_ID, captor.getValue().orderId());
         assertEquals(ORDER_REFERENCE, captor.getValue().orderReference());
 
-        verify(notificationProducer).sendNotification(any(PaymentNotificationRequest.class));
+        verify(notificationProducer).sendNotification(any(PaymentEvent.class));
         verify(outboxService, never()).saveOutboxEvent(eq(OutboxEventTypes.PAYMENT_FAILURE),  any());
     }
 

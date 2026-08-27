@@ -23,9 +23,9 @@ public class NotificationConsumer {
 
     private final EmailService emailService;
 
-    @KafkaListener(topics = "${app.kafka.topic.payment-topic}", groupId = "paymentNotificationGroup")
+    @KafkaListener(topics = "${app.kafka.topic.payment-notification-topic}", groupId = "paymentNotificationGroup")
     public void consumePaymentSuccessNotification(PaymentEvent event) throws MessagingException {
-        log.info(String.format("Consuming the message from <<payment-topic>> Topic: %s", event));
+        log.info(String.format("Consuming the message from <<payment-notification-topic>> Topic: %s", event));
         repository.save(
                 Notification
                         .builder()

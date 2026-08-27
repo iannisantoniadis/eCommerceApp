@@ -17,7 +17,8 @@ public class KafkaErrorHandlerConfig {
                     record.topic(),
                     record.partition(),
                     record.offset(),
-                    exception.getMessage());
+                    exception.getMessage(),
+                    exception);
         }, new FixedBackOff(1000L, 3L)); // retry 3 times, 1s apart
     }
 }

@@ -4,8 +4,6 @@ import com.example.ecomerce.kafka.payment.PaymentEvent;
 import com.example.ecomerce.kafka.payment.PaymentFailureEvent;
 import com.example.ecomerce.kafka.payment.PaymentSuccessEvent;
 import com.example.ecomerce.notification.NotificationProducer;
-import com.example.ecomerce.notification.PaymentNotificationRequest;
-import com.example.ecomerce.outbox.OutboxEvent;
 import com.example.ecomerce.outbox.OutboxEventTypes;
 import com.example.ecomerce.outbox.OutboxService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +35,9 @@ public class PaymentService {
         }
         catch (DataIntegrityViolationException e) {
             log.info("Payment was already processed for order {}, skipping", request.orderId());
+            // So that Spring is not surprised at the end of the transaction that it was supposed to be rolled back since it failed
+            // and implicitly not throw an UnexpectedRollbackException when the transaction fails. Instead, it fires out a warning.
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return; // If I already processed it before, no need to do so again, now
         }
         catch (Exception e){
@@ -52,15 +54,24 @@ public class PaymentService {
 
         //notifications outside SAGA
         try {
+//            notificationProducer.sendNotification(
+//                new PaymentNotificationRequest(
+//                        request.orderReference(),
+//                        request.amount(),
+//                        request.paymentMethod(),
+//                        request.customer().firstname(),
+//                        request.customer().lastname(),
+//                        request.customer().email())
+//        );
             notificationProducer.sendNotification(
-                new PaymentNotificationRequest(
-                        request.orderReference(),
-                        request.amount(),
-                        request.paymentMethod(),
-                        request.customer().firstname(),
-                        request.customer().lastname(),
-                        request.customer().email())
-        );
+                    new PaymentEvent(
+                            request.amount(),
+                            request.paymentMethod(),
+                            request.orderId(),
+                            request.orderReference(),
+                            request.customer()
+                    )
+            );
         }
         catch (Exception e) {
             log.error("Payment was successful but the notification failed for order {}", request.orderId(), e);

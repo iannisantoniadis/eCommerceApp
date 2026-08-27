@@ -63,5 +63,5 @@ logging:
 app:
   kafka:
     topic:
-      payment-topic: payment-topic
+      payment-notification-topic: payment-notification-topic
       order-topic: order-topic

@@ -12,6 +12,9 @@ public class KafkaPaymentTopicConfig {
     @Value("${spring.kafka.template.payment-topic}")
     private String paymentTopic;
 
+    @Value("${spring.kafka.template.payment-notification-topic}")
+    private String paymentNotificationTopic;
+
     @Value("${spring.kafka.template.payment-success-topic}")
     private String paymentSuccessTopic;
 
@@ -36,6 +39,13 @@ public class KafkaPaymentTopicConfig {
     public NewTopic paymentFailureTopic(){
         return TopicBuilder
                 .name(paymentFailureTopic)
+                .build();
+    }
+
+    @Bean
+    public NewTopic paymentNotificationTopic(){
+        return TopicBuilder
+                .name(paymentNotificationTopic)
                 .build();
     }
 }

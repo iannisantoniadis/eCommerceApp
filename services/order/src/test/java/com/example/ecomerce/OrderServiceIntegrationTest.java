@@ -232,7 +232,7 @@ public class OrderServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("updateOrderStatus (bulk @Modifying query) - does NOT increment version, unlike save()")
+    @DisplayName("updateOrderStatus (bulk @Modifying query) - increments version as well despite not being managed by hibernate, mimicking save()")
     void updateOrderStatus_BulkUpdate_VersionBehavior() {
         var order = entityManager.persistAndFlush(buildOrder("REF123"));
 
@@ -241,6 +241,6 @@ public class OrderServiceIntegrationTest {
 
         var reloaded = orderRepository.findById(order.getId()).orElseThrow();
         assertEquals(OrderStatusEnum.COMPLETED, reloaded.getStatus());
-        assertEquals(0L, reloaded.getVersion()); // confirms bulk update bypassed optimistic locking
+        assertEquals(1L, reloaded.getVersion()); // confirms bulk update now participates in optimistic locking, thanks to the manual +1
     }
 }

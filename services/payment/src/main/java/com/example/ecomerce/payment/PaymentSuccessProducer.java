@@ -1,7 +1,6 @@
 package com.example.ecomerce.payment;
 
 import com.example.ecomerce.kafka.payment.PaymentSuccessEvent;
-import com.example.ecomerce.notification.PaymentNotificationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

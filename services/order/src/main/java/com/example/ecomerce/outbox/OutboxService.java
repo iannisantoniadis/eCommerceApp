@@ -22,7 +22,7 @@ public class OutboxService {
             event.setPayload(objectMapper.writeValueAsString(payload));
             repository.save(event);
         } catch (JacksonException e) {
-            throw new IllegalStateException("Could not serialize the payload"); // If payload serialization fails, the transactional
+            throw new IllegalStateException("Could not serialize the payload"); // If payload serialization fails, the transactional should roll it back
         }
     }
 
